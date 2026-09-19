@@ -30,6 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 DATA_PATH = BASE_DIR / "Data" / "data.csv"
 MODEL_PATH = BASE_DIR / "student_dropout_model.pkl"
+METADATA_PATH = BASE_DIR / "model_metadata.pkl"
 
 
 # ============================================================
@@ -177,14 +178,41 @@ def load_data():
 @st.cache_resource(show_spinner="Memuat model Machine Learning...")
 def load_model():
     if not MODEL_PATH.exists():
-        raise FileNotFoundError(
-            f"Model tidak ditemukan di:\n{MODEL_PATH}\n\n"
-            "Pastikan student_dropout_model.pkl berada "
-            "di folder yang sama dengan app.py."
-        )
+        return None
 
     with open(MODEL_PATH, "rb") as file:
-        return pickle.load(file)
+        model = pickle.load(file)
+
+    # Pastikan file yang dimuat benar-benar model binary,
+    # bukan model_metadata.pkl.
+    if not hasattr(model, "predict") or not hasattr(model, "predict_proba"):
+        raise TypeError(
+            "student_dropout_model.pkl bukan objek model Machine Learning "
+            "yang valid. Jangan gunakan model_metadata.pkl sebagai model."
+        )
+
+    if not hasattr(model, "classes_"):
+        raise TypeError("Model tidak memiliki atribut classes_.")
+
+    classes = set(np.asarray(model.classes_).tolist())
+    if classes != {0, 1}:
+        raise ValueError(
+            f"Model harus binary classification dengan classes [0, 1], "
+            f"tetapi ditemukan: {sorted(classes)}"
+        )
+
+    return model
+
+
+@st.cache_data(show_spinner=False)
+def load_metadata():
+    if not METADATA_PATH.exists():
+        return {}
+
+    with open(METADATA_PATH, "rb") as file:
+        metadata = pickle.load(file)
+
+    return metadata if isinstance(metadata, dict) else {}
 
 
 # ============================================================
@@ -284,13 +312,12 @@ def predict_student(row, model):
     raw_prediction = model.predict(X_student)[0]
     raw_probability = model.predict_proba(X_student)[0]
 
-    # Sesuai mapping LabelEncoder pada notebook:
-    # 0 = Dropout, 1 = Enrolled, 2 = Graduate
+    # Mapping model binary:
+    # 0 = Graduate, 1 = Dropout
     if np.issubdtype(np.asarray(model.classes_).dtype, np.number):
         label_map = {
-            0: "Dropout",
-            1: "Enrolled",
-            2: "Graduate",
+            0: "Graduate",
+            1: "Dropout",
         }
 
         predicted_status = label_map.get(
@@ -336,9 +363,18 @@ def predict_student(row, model):
 try:
     df = load_data()
     model = load_model()
+    model_metadata = load_metadata()
+
+    # Data Enrolled tidak digunakan untuk training.
+    # Data ini digunakan sebagai data screening/prediksi.
+    df_enrolled = (
+        df[df["Status"] == "Enrolled"]
+        .copy()
+        .reset_index(drop=True)
+    )
 
 except Exception as error:
-    st.error("Aplikasi gagal memuat data atau model.")
+    st.error("Aplikasi gagal memuat data.")
     st.exception(error)
     st.stop()
 
@@ -354,14 +390,18 @@ with st.sidebar:
 
     st.markdown("### 🔎 Cari Student")
 
-    student_index = st.number_input(
-        "Student Index",
-        min_value=1,
-        max_value=len(df),
-        value=1,
-        step=1,
-        help="Pilih nomor mahasiswa berdasarkan urutan baris pada dataset.",
-    )
+    if len(df_enrolled) > 0:
+        student_index = st.number_input(
+            "Student Index",
+            min_value=1,
+            max_value=len(df_enrolled),
+            value=1,
+            step=1,
+            help="Pilih nomor referensi mahasiswa Enrolled untuk screening.",
+        )
+    else:
+        student_index = 1
+        st.warning("Tidak terdapat mahasiswa dengan status Enrolled.")
 
     predict_button = st.button(
         "🔮 Terapkan Model",
@@ -372,11 +412,16 @@ with st.sidebar:
     st.divider()
 
     st.caption(
-        f"Total data mahasiswa: {len(df):,}"
+        f"Total data Enrolled untuk screening: {len(df_enrolled):,}"
     )
 
+    if model is None:
+        st.warning("Model binary belum tersedia.")
+    else:
+        st.success("Model binary siap digunakan.")
+
     st.caption(
-        "Student Index digunakan sebagai referensi baris "
+        "Student Index merupakan referensi baris pada data Enrolled "
         "karena dataset tidak menyediakan Student ID asli."
     )
 
@@ -444,7 +489,15 @@ c4.metric(
 
 if predict_button:
 
-    row = df.iloc[[student_index - 1]]
+    if model is None:
+        st.warning(
+            "Model binary belum tersedia. Letakkan "
+            "`student_dropout_model.pkl` di folder yang sama dengan `app.py` "
+            "untuk mengaktifkan prediksi."
+        )
+        st.stop()
+
+    row = df_enrolled.iloc[[student_index - 1]]
 
     (
         predicted_status,
@@ -777,28 +830,22 @@ with a2:
 
     payment = (
         df["Tuition_fees_up_to_date"]
+        .map({
+            1: "Up to Date",
+            0: "Not Up to Date",
+        })
         .value_counts()
-        .sort_index()
+        .reindex(
+            ["Up to Date", "Not Up to Date"],
+            fill_value=0,
+        )
         .reset_index()
     )
 
     payment.columns = [
-        "Tuition",
+        "Status Pembayaran",
         "Jumlah",
     ]
-
-    payment["Status Pembayaran"] = (
-        payment["Tuition"]
-        .map(
-            {
-                1: "Up to Date",
-                0: "Not Up to Date",
-            }
-        )
-        .fillna(
-            payment["Tuition"].astype(str)
-        )
-    )
 
     fig_payment = px.pie(
         payment,
@@ -820,17 +867,84 @@ with a2:
 
 
 # ============================================================
-# APPROVAL RATE + MODEL RISK DISTRIBUTION
+# FINANCIAL STATUS & APPROVAL RATE
 # ============================================================
 
-b1, b2 = st.columns(2)
+f1, f2 = st.columns(2)
+
+# ------------------------------------------------------------
+# FINANCIAL STATUS
+# ------------------------------------------------------------
+
+with f1:
+
+    st.markdown(
+        '<div class="section-title">'
+        'Status Finansial Mahasiswa'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    financial = (
+        df["Debtor"]
+        .map({
+            0: "Tidak Berutang",
+            1: "Berutang",
+        })
+        .fillna("Tidak Diketahui")
+    )
+
+    financial_counts = (
+        financial
+        .value_counts()
+        .reindex(
+            ["Tidak Berutang", "Berutang", "Tidak Diketahui"],
+            fill_value=0,
+        )
+        .reset_index()
+    )
+
+    financial_counts.columns = [
+        "Status Finansial",
+        "Jumlah",
+    ]
+
+    fig_financial = px.bar(
+        financial_counts,
+        x="Status Finansial",
+        y="Jumlah",
+        text="Jumlah",
+        title="Status Finansial Mahasiswa",
+    )
+
+    fig_financial.update_traces(
+        textposition="outside",
+    )
+
+    fig_financial.update_layout(
+        margin=dict(l=10, r=10, t=55, b=10),
+        xaxis_title="Status Finansial",
+        yaxis_title="Jumlah Mahasiswa",
+    )
+
+    st.plotly_chart(
+        fig_financial,
+        use_container_width=True,
+    )
 
 
 # ------------------------------------------------------------
 # APPROVAL RATE
 # ------------------------------------------------------------
 
-with b1:
+with f2:
+
+    st.markdown(
+        '<div class="section-title">'
+        'Approval Rate Semester 1 vs Semester 2'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
     approval = (
         df.groupby("Status")
@@ -892,121 +1006,16 @@ with b1:
         range=[0, 1],
     )
 
+    fig_approval.update_layout(
+        margin=dict(l=10, r=10, t=55, b=10),
+        xaxis_title="Status Mahasiswa",
+        yaxis_title="Approval Rate",
+    )
+
     st.plotly_chart(
         fig_approval,
         use_container_width=True,
     )
-
-
-# ------------------------------------------------------------
-# MODEL RISK
-# ------------------------------------------------------------
-
-with b2:
-
-    # Prediksi hanya digunakan untuk menampilkan ringkasan
-    # model pada dashboard.
-    try:
-        model_X = create_features(
-            df.drop(
-                columns=["Status"],
-                errors="ignore",
-            )
-        )
-
-        raw_predictions = model.predict(model_X)
-        raw_probabilities = model.predict_proba(model_X)
-
-        if np.issubdtype(
-            np.asarray(model.classes_).dtype,
-            np.number,
-        ):
-            label_map = {
-                0: "Dropout",
-                1: "Enrolled",
-                2: "Graduate",
-            }
-
-            class_names = [
-                label_map.get(
-                    int(value),
-                    str(value),
-                )
-                for value in model.classes_
-            ]
-
-        else:
-            class_names = [
-                str(value)
-                for value in model.classes_
-            ]
-
-        proba_model = pd.DataFrame(
-            raw_probabilities,
-            columns=class_names,
-        )
-
-        dropout_probability_all = (
-            proba_model["Dropout"]
-            if "Dropout" in proba_model.columns
-            else pd.Series(
-                np.zeros(len(df))
-            )
-        )
-
-        risk_all = np.select(
-            [
-                dropout_probability_all >= 0.70,
-                dropout_probability_all >= 0.40,
-            ],
-            [
-                "High Risk",
-                "Medium Risk",
-            ],
-            default="Low Risk",
-        )
-
-        risk_counts = (
-            pd.Series(risk_all)
-            .value_counts()
-            .reindex(
-                [
-                    "High Risk",
-                    "Medium Risk",
-                    "Low Risk",
-                ],
-                fill_value=0,
-            )
-            .reset_index()
-        )
-
-        risk_counts.columns = [
-            "Risk Level",
-            "Jumlah",
-        ]
-
-        fig_risk = px.pie(
-            risk_counts,
-            names="Risk Level",
-            values="Jumlah",
-            hole=0.58,
-            title="Distribusi Risk Level Model",
-        )
-
-        fig_risk.update_traces(
-            textposition="inside",
-            textinfo="percent+label",
-        )
-
-        st.plotly_chart(
-            fig_risk,
-            use_container_width=True,
-        )
-
-    except Exception as error:
-        st.warning(
-            f"Distribusi risiko model tidak dapat ditampilkan: {error}"
-        )
 
 
 # ============================================================
@@ -1017,7 +1026,7 @@ st.divider()
 
 st.caption(
     "Jaya Jaya Institut — Student Dropout Analytics & "
-    "Machine Learning Prototype"
+    "Binary Dropout Screening Prototype"
 )
 
 st.caption(

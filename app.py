@@ -513,6 +513,26 @@ except Exception as error:
     st.exception(error)
     st.stop()
 
+def get_valid_options(column, fallback):
+    """Ambil kategori yang benar-benar ada di dataset agar input tidak OOD."""
+    if column in df.columns:
+        values = pd.to_numeric(df[column], errors="coerce").dropna().unique().tolist()
+        values = sorted(values)
+        if values:
+            return values
+    return fallback
+
+def get_numeric_bounds(column, fallback_min, fallback_max, fallback_value):
+    """Gunakan rentang dataset untuk mencegah input yang tidak realistis."""
+    if column in df.columns:
+        values = pd.to_numeric(df[column], errors="coerce").dropna()
+        if len(values):
+            low = float(values.min())
+            high = float(values.max())
+            default = float(values.median())
+            return low, high, default
+    return fallback_min, fallback_max, fallback_value
+
 
 # ============================================================
 # DASHBOARD HEADER
@@ -552,7 +572,7 @@ st.markdown(
 
 tab_existing, tab_new = st.tabs([
     "🎓 Screening Mahasiswa Enrolled",
-    "📝 Prediksi Mahasiswa Baru",
+    "📝 Prediksi Mahasiswa",
 ])
 
 # ------------------------------------------------------------
@@ -600,51 +620,79 @@ with tab_existing:
 
 with tab_new:
     st.info(
-        "Isi data mahasiswa baru di bawah ini. Data tidak harus sudah ada "
-        "di dataset. Kolom Status tidak diinput karena merupakan target yang "
-        "akan diprediksi oleh model."
+        "Masukkan data mahasiswa yang ingin discreening. Data tidak harus "
+        "sudah ada di dataset. Kolom Status tidak diinput karena merupakan "
+        "target yang diprediksi model. Prediksi menggunakan data akademik "
+        "semester 1 dan semester 2 yang tersedia."
     )
 
     with st.expander("👤 Data Demografi & Pendaftaran", expanded=True):
         c1, c2, c3 = st.columns(3)
 
         with c1:
-            new_marital = st.number_input("Marital status", 1, 6, 1, key="n_marital")
-            new_application_mode = st.number_input("Application mode", 1, 57, 1, key="n_appmode")
-            new_application_order = st.number_input("Application order", 0, 9, 1, key="n_apporder")
-            new_course = st.number_input("Course", 1, 9999, 1, key="n_course")
+            marital_options = get_valid_options("Marital_status", [1, 2, 3, 4, 5, 6])
+            appmode_options = get_valid_options("Application_mode", list(range(1, 58)))
+            apporder_options = get_valid_options("Application_order", list(range(0, 10)))
+            course_options = get_valid_options("Course", [1])
+
+            new_marital = st.selectbox("Marital status", marital_options, key="n_marital")
+            new_application_mode = st.selectbox("Application mode", appmode_options, key="n_appmode")
+            new_application_order = st.selectbox("Application order", apporder_options, key="n_apporder")
+            new_course = st.selectbox("Course", course_options, key="n_course")
             new_daytime = st.selectbox(
                 "Daytime/evening attendance", [1, 0],
                 format_func=lambda x: "Siang" if x == 1 else "Malam",
                 key="n_daytime",
             )
-            new_previous_qualification = st.number_input(
-                "Previous qualification", 1, 50, 1, key="n_prevqual"
+            prevqual_options = get_valid_options("Previous_qualification", [1])
+            new_previous_qualification = st.selectbox(
+                "Previous qualification", prevqual_options, key="n_prevqual"
             )
 
         with c2:
+            pg_min, pg_max, pg_default = get_numeric_bounds(
+                "Previous_qualification_grade", 0.0, 200.0, 120.0
+            )
             new_previous_grade = st.number_input(
-                "Previous qualification grade", 0.0, 200.0, 120.0, key="n_prevgrade"
+                "Previous qualification grade", min_value=pg_min, max_value=pg_max,
+                value=pg_default, step=0.1, key="n_prevgrade"
             )
-            new_nationality = st.number_input("Nacionality", 1, 99, 1, key="n_nationality")
-            new_mother_qualification = st.number_input(
-                "Mother's qualification", 1, 50, 1, key="n_motherqual"
+
+            nationality_options = get_valid_options("Nacionality", [1])
+            motherqual_options = get_valid_options("Mothers_qualification", [1])
+            fatherqual_options = get_valid_options("Fathers_qualification", [1])
+            motherocc_options = get_valid_options("Mothers_occupation", [0])
+            fatherocc_options = get_valid_options("Fathers_occupation", [0])
+
+            new_nationality = st.selectbox("Nacionality", nationality_options, key="n_nationality")
+            new_mother_qualification = st.selectbox(
+                "Mother's qualification", motherqual_options, key="n_motherqual"
             )
-            new_father_qualification = st.number_input(
-                "Father's qualification", 1, 50, 1, key="n_fatherqual"
+            new_father_qualification = st.selectbox(
+                "Father's qualification", fatherqual_options, key="n_fatherqual"
             )
-            new_mother_occupation = st.number_input(
-                "Mother's occupation", 0, 200, 0, key="n_motherocc"
+            new_mother_occupation = st.selectbox(
+                "Mother's occupation", motherocc_options, key="n_motherocc"
             )
-            new_father_occupation = st.number_input(
-                "Father's occupation", 0, 200, 0, key="n_fatherocc"
+            new_father_occupation = st.selectbox(
+                "Father's occupation", fatherocc_options, key="n_fatherocc"
             )
 
         with c3:
-            new_admission_grade = st.number_input(
-                "Admission grade", 0.0, 200.0, 120.0, key="n_admission"
+            adm_min, adm_max, adm_default = get_numeric_bounds(
+                "Admission_grade", 0.0, 200.0, 120.0
             )
-            new_age = st.number_input("Age at enrollment", 15, 80, 20, key="n_age")
+            new_admission_grade = st.number_input(
+                "Admission grade", min_value=adm_min, max_value=adm_max,
+                value=adm_default, step=0.1, key="n_admission"
+            )
+            age_min, age_max, age_default = get_numeric_bounds(
+                "Age_at_enrollment", 15, 80, 20
+            )
+            new_age = st.number_input(
+                "Age at enrollment", min_value=int(age_min), max_value=int(age_max),
+                value=int(round(age_default)), step=1, key="n_age"
+            )
             new_gender = st.selectbox(
                 "Gender", [0, 1],
                 format_func=lambda x: "Perempuan" if x == 0 else "Laki-laki",
@@ -719,7 +767,7 @@ with tab_new:
             new_gdp = st.number_input("GDP", -20.0, 50.0, 1.0, key="n_gdp")
 
     predict_new_button = st.button(
-        "🚀 Prediksi Mahasiswa Baru",
+        "🚀 Prediksi Dropout",
         type="primary",
         use_container_width=True,
         key="predict_new",
@@ -779,7 +827,7 @@ with tab_new:
             ) = predict_student(new_student, model)
 
             st.markdown(
-                '<div class="section-title">🔮 Hasil Prediksi Mahasiswa Baru</div>',
+                '<div class="section-title">🔮 Hasil Prediksi Dropout</div>',
                 unsafe_allow_html=True,
             )
             st.success(
@@ -787,10 +835,35 @@ with tab_new:
                 "Graduate vs Dropout."
             )
 
-            r1, r2, r3 = st.columns(3)
-            r1.metric("Predicted Status", predicted_status)
-            r2.metric("Dropout Probability", f"{dropout_probability:.2%}")
-            r3.metric("Risk Level", risk_level)
+            dropout_indicated = predicted_status == "Dropout"
+            prediction_label = (
+                "TERINDIKASI DROPOUT" if dropout_indicated
+                else "TIDAK TERINDIKASI DROPOUT"
+            )
+            confidence = max(probability_dict.values())
+
+            if dropout_indicated:
+                st.error(
+                    f"⚠️ {prediction_label} — probabilitas dropout "
+                    f"{dropout_probability:.2%}."
+                )
+            else:
+                st.success(
+                    f"✅ {prediction_label} — probabilitas dropout "
+                    f"{dropout_probability:.2%}."
+                )
+
+            r1, r2, r3, r4 = st.columns(4)
+            r1.metric("Indikasi Dropout", prediction_label)
+            r2.metric("Probabilitas Dropout", f"{dropout_probability:.2%}")
+            r3.metric("Confidence", f"{confidence:.2%}")
+            r4.metric("Risk Level", risk_level)
+
+            st.caption(
+                "Klasifikasi biner menggunakan ambang probabilitas model 50%. "
+                "Risk Level: Low <40%, Medium 40–69%, High ≥70%. "
+                "Hasil merupakan screening berbasis data, bukan keputusan akhir."
+            )
 
             probability_df = pd.DataFrame({
                 "Status": list(probability_dict.keys()),
@@ -850,10 +923,18 @@ if predict_existing_button:
 
     st.markdown('<div class="prediction-box">', unsafe_allow_html=True)
 
-    p1, p2, p3 = st.columns(3)
+    dropout_indicated = predicted_status == "Dropout"
+    prediction_label = (
+        "TERINDIKASI DROPOUT" if dropout_indicated
+        else "TIDAK TERINDIKASI DROPOUT"
+    )
+    confidence = max(probability_dict.values())
+
+    p1, p2, p3, p4 = st.columns(4)
     p1.metric("Student Index", str(student_index))
-    p2.metric("Predicted Status", predicted_status)
-    p3.metric("Dropout Probability", f"{dropout_probability:.2%}")
+    p2.metric("Indikasi Dropout", prediction_label)
+    p3.metric("Probabilitas Dropout", f"{dropout_probability:.2%}")
+    p4.metric("Confidence", f"{confidence:.2%}")
 
     if risk_level == "High Risk":
         risk_class = "risk-high"
@@ -971,6 +1052,9 @@ st.markdown(
 )
 
 if model is not None:
+    st.success(
+        "Model `student_dropout_model.pkl` berhasil dimuat dan siap melakukan prediksi."
+    )
     info_cols = st.columns(4)
     info_cols[0].metric(
         "Model",

@@ -246,9 +246,6 @@ https://datastudio.google.com/reporting/55c07af9-5410-4d96-b557-1f77ed44ba96
 *Link Prototype Streamlit Cloud:*
 https://institutjayajayadashboard-4olgxehshv9ftm3qexxg9p.streamlit.app/
 
-*Link Video Penjelasan:*
-https://youtu.be/D4zR2kGy-AI?si=AeB2Ub0CBp9zCJtf
-
 ### Deployment ke Streamlit Community Cloud
 
 Prototype machine learning dideploy menggunakan Streamlit Community Cloud
@@ -514,19 +511,72 @@ perlu diverifikasi oleh pihak institusi.
 
 ### Rekomendasi Action Items
 
--   Melakukan screening berkala terhadap mahasiswa menggunakan indikator
-    akademik dan prototype machine learning.
--   Memprioritaskan verifikasi mahasiswa yang masuk kategori **High
-    Risk** sebelum menentukan bentuk pendampingan.
--   Memantau nilai semester, jumlah mata kuliah yang disetujui, serta
-    perubahan performa antarsemester.
--   Memantau faktor administratif dan ekonomi seperti status pembayaran,
-    debtor, dan scholarship sebagai konteks tambahan.
--   Memberikan pendampingan yang sesuai berdasarkan hasil screening dan
-    komunikasi langsung dengan mahasiswa.
--   Melakukan evaluasi model secara berkala menggunakan data mahasiswa
-    terbaru agar performanya tetap relevan.
--   Memantau *false positive* dan *false negative* sebagai bagian dari
-    evaluasi kualitas model.
--   Menjaga privasi data mahasiswa dan membatasi akses terhadap hasil
-    prediksi sesuai kebutuhan institusi.
+Rekomendasi disusun berdasarkan hasil EDA, feature importance model, dan
+Risk Level hasil screening. Tujuannya adalah mengubah hasil analisis menjadi
+tindakan yang dapat dilakukan oleh pihak institusi. Hasil model tetap
+merupakan alat bantu screening dan perlu diverifikasi sebelum intervensi.
+
+#### Temuan yang Menjadi Dasar Rekomendasi
+
+1. Pada EDA, rata-rata jumlah mata kuliah yang disetujui pada mahasiswa
+   `Dropout` lebih rendah dibandingkan `Graduate`: **2,55 vs 6,23** pada
+   semester 1 dan **1,94 vs 6,18** pada semester 2.
+2. Rata-rata nilai juga berbeda secara deskriptif: **7,26 vs 12,64** pada
+   semester 1 dan **5,90 vs 12,70** pada semester 2 untuk `Dropout` dan
+   `Graduate`.
+3. `Approval_Rate_2nd_Sem` merupakan fitur dengan importance tertinggi pada
+   model (**0,176687**), diikuti `Curricular_units_2nd_sem_approved`
+   (**0,042873**), indikator status pembayaran, dan
+   `Approval_Rate_1st_Sem` (**0,034774**).
+4. Pada EDA kategorikal, kelompok `Tuition_fees_up_to_date = 0` memiliki
+   dropout rate **86,55%**, sedangkan kategori `1` sebesar **24,74%**.
+   Kelompok `Debtor = 1` memiliki dropout rate **62,03%**, sedangkan
+   `Debtor = 0` sebesar **28,28%**. Pada `Scholarship_holder = 0`,
+   dropout rate sebesar **38,71%**, sedangkan penerima beasiswa sebesar
+   **12,19%**.
+5. Pada data testing, model mengelompokkan **268 mahasiswa sebagai High
+   Risk, 26 Medium Risk, dan 432 Low Risk** berdasarkan threshold probabilitas
+   yang digunakan pada prototype. Notebook juga menghasilkan tabel
+   `risk_profile_summary` untuk melihat rata-rata approval rate, nilai,
+   status pembayaran, debtor, dan dropout aktual pada masing-masing
+   kelompok risiko.
+
+Perbedaan dropout rate dan feature importance merupakan temuan
+deskriptif/interpretatif dan **tidak membuktikan hubungan sebab-akibat**.
+
+#### Action Items Prioritas
+
+| Prioritas | Dasar Analisis | Sasaran | Tindakan | Pihak Sasaran |
+|---|---|---|---|---|
+| **1 — High Risk** | Probabilitas Dropout **>=70%** | Mahasiswa High Risk | Lakukan verifikasi individual dan identifikasi kendala akademik, finansial, atau administratif sebelum menentukan intervensi. | Dosen PA / Program Studi / Akademik |
+| **2 — High Risk + Akademik** | `Approval_Rate_2nd_Sem` merupakan feature importance tertinggi dan kelompok Dropout memiliki approval rate lebih rendah secara deskriptif. | High Risk dengan performa akademik rendah | Evaluasi mata kuliah yang belum disetujui, berikan tutoring/pendampingan belajar, dan susun rencana studi yang lebih terarah. | Dosen PA / Program Studi |
+| **3 — High/Medium Risk + Finansial** | Dropout rate `Tuition_fees_up_to_date = 0` sebesar **86,55%** dan `Debtor = 1` sebesar **62,03%** pada EDA. | Mahasiswa berisiko dengan pembayaran belum up to date atau berutang | Verifikasi kendala pembayaran dan, sesuai kebijakan institusi, informasikan opsi beasiswa, keringanan, atau cicilan. | Bagian Keuangan / Kemahasiswaan |
+| **4 — Medium Risk** | Probabilitas Dropout **40%–<70%** | Mahasiswa Medium Risk | Jadwalkan monitoring akademik berkala dan lakukan evaluasi ulang setelah periode akademik berikutnya. | Dosen PA / Program Studi |
+| **5 — Low Risk** | Probabilitas Dropout **<40%** | Mahasiswa Low Risk | Lanjutkan monitoring rutin. Tidak diperlukan intervensi intensif hanya berdasarkan hasil model. | Akademik / Dosen PA |
+| **6 — Kelompok Course** | Beberapa Course memiliki dropout rate tinggi dengan minimal 20 observasi, misalnya **9130 (55,32%)**, **9119 (54,12%)**, dan **9991 (50,75%)**. | Unit/program studi yang terkait dengan Course tersebut | Lakukan evaluasi lebih lanjut terhadap pola akademik dan proses pendampingan pada kelompok Course tersebut sebelum menetapkan intervensi. | Program Studi / Akademik |
+
+#### Urutan Prioritas Penanganan
+
+1. **High Risk** menjadi prioritas pertama karena memiliki probabilitas
+   Dropout paling tinggi menurut model.
+2. Pada kelompok High Risk, periksa terlebih dahulu indikator akademik dan
+   finansial agar bentuk intervensi sesuai dengan kondisi mahasiswa.
+3. **Medium Risk** menjadi prioritas kedua untuk monitoring dan pencegahan
+   peningkatan risiko.
+4. **Low Risk** mendapatkan monitoring rutin.
+5. Temuan berdasarkan Course digunakan sebagai dasar evaluasi tingkat
+   kelompok dan **bukan** sebagai label otomatis terhadap individu.
+
+#### Action Items pada Prototype
+
+Prototype Streamlit juga menerjemahkan hasil screening menjadi rekomendasi
+tindakan. Setelah prediksi, sistem menampilkan dasar akademik/finansial yang
+terdeteksi serta tindakan berdasarkan Risk Level. Untuk indikator akademik,
+prototype membandingkan approval rate dan rata-rata nilai mahasiswa dengan
+median dataset sehingga rekomendasi tidak menggunakan threshold angka yang
+dibuat secara arbitrer.
+
+Seluruh rekomendasi tetap perlu diverifikasi melalui komunikasi dengan
+mahasiswa. Model tidak digunakan untuk menetapkan keputusan akademik atau
+administratif secara otomatis.
+

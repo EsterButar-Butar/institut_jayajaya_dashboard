@@ -59,43 +59,132 @@ Cakupan proyek meliputi:
 11. Menyimpan model dalam format `.pkl`.
 12. Membuat dashboard untuk monitoring kondisi mahasiswa.
 13. Membuat prototype machine learning menggunakan Streamlit.
-14. Menyediakan input Student Index untuk menerapkan model pada
-    mahasiswa Enrolled.
-15. Menyediakan risk level berdasarkan probabilitas dropout:
-    -   **High Risk**: probabilitas dropout \>= 70%.
-    -   **Medium Risk**: probabilitas dropout \>= 40% dan \< 70%.
-    -   **Low Risk**: probabilitas dropout \< 40%.
+14. Menyediakan fitur screening untuk mahasiswa **Enrolled** menggunakan
+    Student Index.
+15. Menyediakan fitur **prediksi mahasiswa baru** melalui form input tanpa
+    memerlukan kolom `Status` sebagai input.
+16. Menyediakan risk level berdasarkan probabilitas dropout:
+    -   **High Risk**: probabilitas dropout >= 70%.
+    -   **Medium Risk**: probabilitas dropout >= 40% dan < 70%.
+    -   **Low Risk**: probabilitas dropout < 40%.
 
 ### Persiapan
 
-Dataset yang digunakan dalam proyek ini adalah **Students' Performance**.
-Dataset disediakan untuk proyek akhir Dicoding dan terdiri dari 4.424 baris
-dan 37 kolom.
+#### Sumber Data
 
-**Sumber data:**
+Dataset yang digunakan dalam proyek ini adalah **Students' Performance**.
+Dataset disediakan untuk proyek akhir Dicoding dan digunakan untuk menganalisis
+performa mahasiswa serta status akhir mahasiswa.
+
+**Sumber data utama:**
 
 - Repository dataset Dicoding:
   https://github.com/dicodingacademy/dicoding_dataset/tree/main/students_performance
 - File dataset `data.csv`:
+  https://github.com/dicodingacademy/dicoding_dataset/blob/main/students_performance/data.csv
 
+**Cara mengakses dan menyiapkan dataset:**
 
-Setup environment:
+1. Buka repository dataset Dicoding.
+2. Masuk ke folder `students_performance`.
+3. Buka file `data.csv`.
+4. Klik **Raw** atau **Download raw file** untuk mengunduh dataset.
+5. Simpan file dengan nama `data.csv`.
+6. Letakkan file tersebut pada folder `Data/` di dalam project.
 
-``` bash
+Struktur minimum project:
+
+```text
+project/
+├── app.py
+├── requirements.txt
+├── Notebook.ipynb
+├── student_dropout_model.pkl
+├── model_metadata.pkl
+└── Data/
+    └── data.csv
+```
+
+Dataset yang digunakan dalam proyek terdiri dari **4.424 baris dan 37 kolom**.
+Pastikan file yang digunakan memiliki struktur dan nama kolom yang sesuai
+dengan dataset proyek.
+
+Jika `Data/data.csv` sudah tersedia di repository project, dataset tidak perlu
+diunduh kembali. Pastikan aplikasi dan notebook membaca file dari lokasi
+`Data/data.csv`.
+
+#### Setup Environment
+
+1. Buat virtual environment:
+
+```bash
 python -m venv .venv
 ```
 
-Aktifkan environment pada Windows:
+2. Aktifkan virtual environment pada Windows:
 
-``` bash
+```bash
 .venv\Scripts\activate
 ```
 
-Install seluruh dependency:
+3. Install seluruh dependency:
 
-``` bash
+```bash
 pip install -r requirements.txt
 ```
+
+4. Jalankan `Notebook.ipynb` dari tahap awal hingga akhir untuk melakukan
+   data understanding, data preparation, EDA, feature engineering,
+   pemodelan, evaluasi, dan penyimpanan model.
+
+5. Setelah model tersedia, jalankan prototype Streamlit:
+
+```bash
+streamlit run app.py
+```
+
+## Alur Proses Data Science
+
+Proyek ini menerapkan tahapan Data Science secara berurutan dari identifikasi
+masalah sampai deployment:
+
+1. **Business Understanding**  
+   Mengidentifikasi permasalahan dropout dan kebutuhan institusi untuk
+   melakukan monitoring serta screening awal.
+
+2. **Data Understanding**  
+   Memahami struktur dataset, tipe data, distribusi status, serta memeriksa
+   kualitas data seperti missing value dan duplicate.
+
+3. **Data Preparation**  
+   Menyiapkan data untuk analisis dan pemodelan, termasuk pemisahan data
+   `Enrolled` dari data training serta penetapan target binary.
+
+4. **Exploratory Data Analysis (EDA)**  
+   Menganalisis distribusi status dan karakteristik akademik, administratif,
+   serta ekonomi untuk memahami pola yang berkaitan dengan dropout.
+
+5. **Feature Engineering**  
+   Membentuk fitur turunan seperti approval rate, evaluation rate, perubahan
+   nilai, total mata kuliah yang disetujui, dan rasio nilai.
+
+6. **Modeling**  
+   Membandingkan Random Forest dan XGBoost menggunakan
+   `RandomizedSearchCV` dengan `StratifiedKFold`. Data training hanya
+   menggunakan kelas `Graduate` dan `Dropout`.
+
+7. **Evaluation**  
+   Mengevaluasi model menggunakan accuracy, precision, recall, F1-score,
+   confusion matrix, serta metrik khusus kelas `Dropout`.
+
+8. **Deployment**  
+   Menyimpan model dalam format `.pkl` dan menggunakannya pada prototype
+   Streamlit yang dapat dijalankan secara lokal maupun melalui Streamlit
+   Community Cloud.
+
+9. **Monitoring dan Action Items**  
+   Menggunakan hasil dashboard dan model sebagai informasi pendukung untuk
+   monitoring mahasiswa serta menyusun tindakan tindak lanjut.
 
 ## Business Dashboard
 
@@ -142,10 +231,14 @@ Dashboard menampilkan beberapa komponen utama:
 12. **Filter Status Financial** --- filter interaktif untuk melihat
     dashboard berdasarkan kategori **Tidak Berutang** dan **Berutang**.
 
-Dashboard juga menyediakan penerapan model pada halaman utama. Pengguna
-dapat memasukkan Student Index, kemudian menekan tombol **Terapkan
-Model** untuk memperoleh hasil prediksi, probabilitas dropout, risk
-level, dan probabilitas setiap status.
+Prototype Streamlit yang terhubung dengan project menyediakan dua fungsi
+Machine Learning:
+
+1. **Screening Mahasiswa Enrolled** menggunakan Student Index.
+2. **Prediksi Mahasiswa Baru** menggunakan form input data mahasiswa.
+
+Kedua fitur menghasilkan Predicted Status, Dropout Probability, Risk Level,
+dan probabilitas kelas Graduate dan Dropout.
 
 *Link Dashboard Looker Studio:*
 https://datastudio.google.com/reporting/55c07af9-5410-4d96-b557-1f77ed44ba96
@@ -196,9 +289,12 @@ model yang dipanggil untuk prediksi.
   Pengguna dapat mengeksplorasi distribusi status, dropout rate,
   performa akademik, kondisi pembayaran, status finansial, serta
   menggunakan filter Gender dan Status Financial.
-- **Streamlit** digunakan sebagai prototype Machine Learning untuk
-  screening mahasiswa Enrolled menggunakan model binary Graduate vs
-  Dropout.
+- **Streamlit** digunakan sebagai prototype Machine Learning dengan dua
+  fungsi utama:
+  1. screening mahasiswa `Enrolled` menggunakan Student Index; dan
+  2. prediksi mahasiswa baru melalui form input data mahasiswa.
+
+  Kedua fungsi menggunakan model binary **Graduate vs Dropout**.
 
 ## Menjalankan Sistem Machine Learning
 
@@ -293,17 +389,50 @@ http://localhost:8501
 
 ### Cara Menggunakan Prototype
 
-1.  Jalankan aplikasi Streamlit.
-2.  Buka bagian **Cari Student untuk Screening** pada halaman utama.
-3.  Masukkan **Student Index**.
-4.  Klik **Terapkan Model**.
-5.  Sistem mengambil data mahasiswa berdasarkan posisi baris pada data
-    Enrolled.
-6.  Sistem melakukan *feature engineering*.
-7.  Model melakukan prediksi status mahasiswa.
-8.  Sistem menampilkan Student Index, Predicted Status, Dropout
-    Probability, Risk Level, probabilitas setiap status, dan ringkasan
-    data mahasiswa yang dipilih.
+Prototype menyediakan dua mode penggunaan.
+
+#### A. Screening Mahasiswa Enrolled
+
+1. Jalankan aplikasi Streamlit.
+2. Buka tab **🎓 Screening Mahasiswa Enrolled**.
+3. Masukkan **Student Index** yang tersedia pada data Enrolled.
+4. Klik **🔮 Terapkan Model**.
+5. Sistem mengambil data mahasiswa berdasarkan posisi baris pada data
+   `Enrolled`.
+6. Sistem melakukan feature engineering menggunakan fungsi yang sama dengan
+   proses pemodelan.
+7. Model XGBoost melakukan prediksi binary.
+8. Sistem menampilkan:
+   - **Predicted Status**
+   - **Dropout Probability**
+   - **Risk Level**
+   - probabilitas **Graduate** dan **Dropout**
+   - ringkasan data mahasiswa yang dipilih.
+
+Student Index merupakan nomor referensi baris pada data `Enrolled`, bukan
+Student ID asli.
+
+#### B. Prediksi Mahasiswa Baru
+
+1. Buka tab **📝 Prediksi Mahasiswa Baru**.
+2. Isi data demografi dan pendaftaran mahasiswa.
+3. Isi kondisi finansial mahasiswa.
+4. Isi performa akademik semester 1.
+5. Isi performa akademik semester 2.
+6. Isi indikator ekonomi.
+7. Klik **🚀 Prediksi Mahasiswa Baru**.
+8. Sistem membentuk data input sesuai struktur fitur model.
+9. Sistem melakukan feature engineering.
+10. Model XGBoost melakukan prediksi terhadap input mahasiswa baru.
+11. Sistem menampilkan:
+    - **Predicted Status**
+    - **Dropout Probability**
+    - **Risk Level**
+    - probabilitas **Graduate** dan **Dropout**
+
+Pada mode ini, kolom `Status` tidak dimasukkan oleh pengguna karena `Status`
+merupakan target yang diprediksi oleh model. Data mahasiswa baru juga tidak
+harus sudah terdapat di dalam dataset.
 
 ### File yang Dibutuhkan untuk Prototype
 
@@ -376,7 +505,12 @@ Berdasarkan *feature importance*, `Approval_Rate_2nd_Sem` merupakan fitur dengan
 
 Nilai *feature importance* merupakan **interpretasi model**, bukan bukti bahwa fitur tersebut secara langsung menyebabkan mahasiswa mengalami dropout. Hubungan sebab-akibat tidak dapat disimpulkan hanya dari nilai importance.
 
-Prototype Streamlit menggunakan model yang telah disimpan dalam `student_dropout_model.pkl` untuk melakukan screening terhadap mahasiswa `Enrolled`. Sistem menampilkan hasil prediksi, probabilitas `Dropout`, dan `Risk Level` sebagai informasi awal yang tetap perlu diverifikasi oleh pihak institusi.
+Prototype Streamlit menggunakan `student_dropout_model.pkl` untuk dua
+kebutuhan. Pertama, melakukan screening terhadap mahasiswa `Enrolled`
+berdasarkan Student Index. Kedua, melakukan prediksi terhadap mahasiswa baru
+berdasarkan data yang diinput melalui form. Sistem menampilkan hasil prediksi,
+probabilitas `Dropout`, dan `Risk Level` sebagai informasi awal yang tetap
+perlu diverifikasi oleh pihak institusi.
 
 ### Rekomendasi Action Items
 

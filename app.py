@@ -425,34 +425,305 @@ def create_features(dataframe):
 
 
 # ============================================================
+# CATEGORY LABELS & INTERNAL CODE MAPPING
+# ============================================================
+
+# Label berikut mengikuti dictionary resmi UCI untuk dataset
+# "Predict Students' Dropout and Academic Success".
+# UI menampilkan label deskriptif, sedangkan model tetap menerima
+# kode numerik asli dataset.
+CATEGORY_LABELS = {
+    "Marital_status": {
+        1: "Lajang (single)",
+        2: "Menikah (married)",
+        3: "Duda/Janda (widower)",
+        4: "Bercerai (divorced)",
+        5: "Hidup bersama (facto union)",
+        6: "Berpisah secara hukum (legally separated)",
+    },
+    "Application_mode": {
+        1: "Fase 1 - kuota umum",
+        2: "Ordonansi No. 612/93",
+        5: "Fase 1 - kuota khusus (Azores)",
+        7: "Pemegang gelar dari perguruan tinggi lain",
+        10: "Ordonansi No. 854-B/99",
+        15: "Mahasiswa internasional (sarjana)",
+        16: "Fase 1 - kuota khusus (Madeira)",
+        17: "Fase 2 - kuota umum",
+        18: "Fase 3 - kuota umum",
+        26: "Ordonansi No. 533-A/99, item b2 (Different Plan)",
+        27: "Ordonansi No. 533-A/99, item b3 (Other Institution)",
+        39: "Usia di atas 23 tahun",
+        42: "Transfer",
+        43: "Pindah program studi",
+        44: "Pemegang diploma spesialisasi teknologi",
+        51: "Pindah institusi/program studi",
+        53: "Pemegang diploma short cycle",
+        57: "Pindah institusi/program studi (internasional)",
+    },
+    "Application_order": {
+        0: "Pilihan ke-1",
+        1: "Pilihan ke-2",
+        2: "Pilihan ke-3",
+        3: "Pilihan ke-4",
+        4: "Pilihan ke-5",
+        5: "Pilihan ke-6",
+        6: "Pilihan ke-7",
+        7: "Pilihan ke-8",
+        8: "Pilihan ke-9",
+        9: "Pilihan ke-10",
+    },
+    "Course": {
+        33: "Teknologi Produksi Biofuel",
+        171: "Desain Animasi & Multimedia",
+        8014: "Layanan Sosial (kelas malam)",
+        9003: "Agronomi",
+        9070: "Desain Komunikasi",
+        9085: "Keperawatan Hewan",
+        9119: "Teknik Informatika",
+        9130: "Equinculture",
+        9147: "Manajemen",
+        9238: "Layanan Sosial",
+        9254: "Pariwisata",
+        9500: "Keperawatan",
+        9556: "Kebersihan Gigi / Oral Hygiene",
+        9670: "Manajemen Periklanan & Pemasaran",
+        9773: "Jurnalistik & Komunikasi",
+        9853: "Pendidikan Dasar",
+        9991: "Manajemen (kelas malam)",
+    },
+    "Daytime_evening_attendance": {
+        1: "Siang (daytime)",
+        0: "Malam (evening)",
+    },
+    "Previous_qualification": {
+        1: "Pendidikan menengah",
+        2: "Pendidikan tinggi - sarjana",
+        3: "Pendidikan tinggi - degree",
+        4: "Pendidikan tinggi - magister",
+        5: "Pendidikan tinggi - doktor",
+        6: "Pernah mengikuti pendidikan tinggi",
+        9: "Kelas 12 belum selesai",
+        10: "Kelas 11 belum selesai",
+        12: "Lainnya - kelas 11",
+        14: "Kelas 10",
+        15: "Kelas 10 belum selesai",
+        19: "Pendidikan dasar siklus 3 (kelas 9/10/11) atau setara",
+        38: "Pendidikan dasar siklus 2 (kelas 6/7/8) atau setara",
+        39: "Kursus spesialisasi teknologi",
+        40: "Pendidikan tinggi - degree (siklus 1)",
+        42: "Kursus teknis tinggi profesional",
+        43: "Pendidikan tinggi - magister (siklus 2)",
+    },
+    "Nacionality": {
+        1: "Indonesia",
+        2: "Jerman",
+        6: "Spanyol",
+        11: "Italia",
+        13: "Belanda",
+        14: "Inggris",
+        17: "Lituania",
+        21: "Angola",
+        22: "Tanjung Verde (Cape Verde)",
+        24: "Guinea",
+        25: "Mozambik",
+        26: "São Tomé dan Príncipe",
+        32: "Turki",
+        41: "Brasil",
+        62: "Rumania",
+        100: "Moldova",
+        101: "Meksiko",
+        103: "Ukraina",
+        105: "Rusia",
+        108: "Kuba",
+        109: "Kolombia",
+    },
+    "Mothers_qualification": {
+        1: "Pendidikan menengah - kelas 12/setara",
+        2: "Pendidikan tinggi - sarjana",
+        3: "Pendidikan tinggi - degree",
+        4: "Pendidikan tinggi - magister",
+        5: "Pendidikan tinggi - doktor",
+        6: "Pernah mengikuti pendidikan tinggi",
+        9: "Kelas 12 belum selesai",
+        10: "Kelas 11 belum selesai",
+        11: "Kelas 7 (sistem lama)",
+        12: "Lainnya - kelas 11",
+        14: "Kelas 10",
+        18: "Kursus perdagangan umum",
+        19: "Pendidikan dasar siklus 3 (kelas 9/10/11) atau setara",
+        22: "Kursus teknis-profesional",
+        26: "Kelas 7",
+        27: "Siklus 2 sekolah menengah umum",
+        29: "Kelas 9 belum selesai",
+        30: "Kelas 8",
+        34: "Tidak diketahui",
+        35: "Tidak dapat membaca/menulis",
+        36: "Dapat membaca tanpa menyelesaikan kelas 4",
+        37: "Pendidikan dasar siklus 1 (kelas 4/5) atau setara",
+        38: "Pendidikan dasar siklus 2 (kelas 6/7/8) atau setara",
+        39: "Kursus spesialisasi teknologi",
+        40: "Pendidikan tinggi - degree (siklus 1)",
+        41: "Kursus studi tinggi khusus",
+        42: "Kursus teknis tinggi profesional",
+        43: "Pendidikan tinggi - magister (siklus 2)",
+        44: "Pendidikan tinggi - doktor (siklus 3)",
+    },
+    "Fathers_qualification": {
+        1: "Pendidikan menengah - kelas 12/setara",
+        2: "Pendidikan tinggi - sarjana",
+        3: "Pendidikan tinggi - degree",
+        4: "Pendidikan tinggi - magister",
+        5: "Pendidikan tinggi - doktor",
+        6: "Pernah mengikuti pendidikan tinggi",
+        9: "Kelas 12 belum selesai",
+        10: "Kelas 11 belum selesai",
+        11: "Kelas 7 (sistem lama)",
+        12: "Lainnya - kelas 11",
+        13: "Kelas 2 sekolah menengah pelengkap",
+        14: "Kelas 10",
+        18: "Kursus perdagangan umum",
+        19: "Pendidikan dasar siklus 3 (kelas 9/10/11) atau setara",
+        20: "Kursus sekolah menengah pelengkap",
+        22: "Kursus teknis-profesional",
+        25: "Kursus sekolah menengah pelengkap - belum selesai",
+        26: "Kelas 7",
+        27: "Siklus 2 sekolah menengah umum",
+        29: "Kelas 9 belum selesai",
+        30: "Kelas 8",
+        31: "Kursus umum administrasi dan perdagangan",
+        33: "Akuntansi dan administrasi tambahan",
+        34: "Tidak diketahui",
+        35: "Tidak dapat membaca/menulis",
+        36: "Dapat membaca tanpa menyelesaikan kelas 4",
+        37: "Pendidikan dasar siklus 1 (kelas 4/5) atau setara",
+        38: "Pendidikan dasar siklus 2 (kelas 6/7/8) atau setara",
+        39: "Kursus spesialisasi teknologi",
+        40: "Pendidikan tinggi - degree (siklus 1)",
+        41: "Kursus studi tinggi khusus",
+        42: "Kursus teknis tinggi profesional",
+        43: "Pendidikan tinggi - magister (siklus 2)",
+        44: "Pendidikan tinggi - doktor (siklus 3)",
+    },
+    "Mothers_occupation": {
+        0: "Pelajar/Mahasiswa",
+        1: "Pimpinan/Manajer/Direktur",
+        2: "Profesional intelektual dan ilmiah",
+        3: "Teknisi dan profesi tingkat menengah",
+        4: "Staf administrasi",
+        5: "Pekerja layanan, keamanan, keselamatan & penjualan",
+        6: "Petani dan pekerja terampil pertanian/perikanan/kehutanan",
+        7: "Pekerja terampil industri/konstruksi/pengrajin",
+        8: "Operator instalasi/mesin dan perakit",
+        9: "Pekerja tidak terampil",
+        10: "Profesi angkatan bersenjata",
+        90: "Situasi lainnya",
+        99: "Kosong/tidak diisi",
+        122: "Profesional kesehatan",
+        123: "Guru",
+        125: "Spesialis teknologi informasi & komunikasi (TIK)",
+        131: "Teknisi sains & teknik tingkat menengah",
+        132: "Teknisi/profesional kesehatan tingkat menengah",
+        134: "Teknisi hukum, sosial, olahraga, budaya & sejenis",
+        141: "Pegawai kantor/sekretaris/operator pengolahan data",
+        143: "Operator data, akuntansi, statistik, keuangan & registrasi",
+        144: "Staf pendukung administrasi lainnya",
+        151: "Pekerja layanan personal",
+        152: "Penjual",
+        153: "Pekerja perawatan personal dan sejenisnya",
+        171: "Pekerja konstruksi terampil, kecuali teknisi listrik",
+        173: "Pekerja percetakan/instrumen presisi/perhiasan/pengrajin",
+        175: "Pekerja pengolahan makanan/kayu/pakaian & kerajinan",
+        191: "Pekerja kebersihan",
+        192: "Pekerja tidak terampil pertanian/peternakan/perikanan/kehutanan",
+        193: "Pekerja tidak terampil ekstraktif/konstruksi/manufaktur/transportasi",
+        194: "Asisten penyiapan makanan",
+    },
+    "Fathers_occupation": {
+        0: "Pelajar/Mahasiswa",
+        1: "Pimpinan/Manajer/Direktur",
+        2: "Profesional intelektual dan ilmiah",
+        3: "Teknisi dan profesi tingkat menengah",
+        4: "Staf administrasi",
+        5: "Pekerja layanan, keamanan, keselamatan & penjualan",
+        6: "Petani dan pekerja terampil pertanian/perikanan/kehutanan",
+        7: "Pekerja terampil industri/konstruksi/pengrajin",
+        8: "Operator instalasi/mesin dan perakit",
+        9: "Pekerja tidak terampil",
+        10: "Profesi angkatan bersenjata",
+        90: "Situasi lainnya",
+        99: "Kosong/tidak diisi",
+        101: "Perwira angkatan bersenjata",
+        102: "Bintara angkatan bersenjata",
+        103: "Personel angkatan bersenjata lainnya",
+        112: "Pimpinan layanan administrasi & komersial",
+        114: "Pimpinan hotel, katering, perdagangan & layanan lainnya",
+        121: "Profesional ilmu fisika, matematika, teknik & teknik terkait",
+        122: "Profesional kesehatan",
+        123: "Guru",
+        124: "Profesional keuangan, akuntansi, administrasi & hubungan publik/komersial",
+        131: "Teknisi sains & teknik tingkat menengah",
+        132: "Teknisi/profesional kesehatan tingkat menengah",
+        134: "Teknisi hukum, sosial, olahraga, budaya & sejenis",
+        135: "Teknisi teknologi informasi & komunikasi",
+        141: "Pegawai kantor/sekretaris/operator pengolahan data",
+        143: "Operator data, akuntansi, statistik, keuangan & registrasi",
+        144: "Staf pendukung administrasi lainnya",
+        151: "Pekerja layanan personal",
+        152: "Penjual",
+        153: "Pekerja perawatan personal dan sejenisnya",
+        154: "Personel perlindungan & keamanan",
+        161: "Petani dan pekerja pertanian/peternakan berorientasi pasar",
+        163: "Petani/peternak/nelayan/pemburu/pengumpul subsisten",
+        171: "Pekerja konstruksi terampil, kecuali teknisi listrik",
+        172: "Pekerja terampil metalurgi/pengerjaan logam",
+        174: "Pekerja terampil listrik & elektronika",
+        175: "Pekerja pengolahan makanan/kayu/pakaian & kerajinan",
+        181: "Operator instalasi dan mesin tetap",
+        182: "Pekerja perakitan",
+        183: "Pengemudi kendaraan & operator alat bergerak",
+        192: "Pekerja tidak terampil pertanian/peternakan/perikanan/kehutanan",
+        193: "Pekerja tidak terampil ekstraktif/konstruksi/manufaktur/transportasi",
+        194: "Asisten penyiapan makanan",
+        195: "Pedagang kaki lima (non-makanan) & penyedia layanan jalanan",
+    },
+    "Gender": {0: "Perempuan", 1: "Laki-laki"},
+    "Displaced": {0: "Tidak", 1: "Ya"},
+    "Educational_special_needs": {0: "Tidak", 1: "Ya"},
+    "Debtor": {0: "Tidak Berutang", 1: "Berutang"},
+    "Tuition_fees_up_to_date": {0: "Belum Up to Date", 1: "Up to Date"},
+    "Scholarship_holder": {0: "Bukan Penerima Beasiswa", 1: "Penerima Beasiswa"},
+    "International": {0: "Bukan Mahasiswa Internasional", 1: "Mahasiswa Internasional"},
+}
+
+def get_category_options(column, fallback):
+    """Return label options for the UI and a label -> original numeric code map."""
+    valid_values = get_valid_options(column, fallback)
+    mapping = CATEGORY_LABELS.get(column, {})
+    options = []
+    label_to_code = {}
+
+    for value in valid_values:
+        code = int(value) if float(value).is_integer() else value
+        label = mapping.get(code, f"Kode dataset: {code}")
+        options.append(label)
+        label_to_code[label] = code
+
+    return options, label_to_code
+
+
+# ============================================================
 # DISPLAY LABELS
 # ============================================================
 
 def map_display_labels(dataframe):
     data = dataframe.copy()
 
-    mappings = {
-        "Gender": {
-            0: "Perempuan",
-            1: "Laki-laki"
-        },
-        "Debtor": {
-            0: "Tidak Berutang",
-            1: "Berutang"
-        },
-        "Tuition_fees_up_to_date": {
-            0: "Not Up to Date",
-            1: "Up to Date"
-        },
-        "Scholarship_holder": {
-            0: "Bukan Penerima Beasiswa",
-            1: "Penerima Beasiswa"
-        },
-    }
-
-    for column, mapping in mappings.items():
+    for column, mapping in CATEGORY_LABELS.items():
         if column in data.columns:
-            data[column] = data[column].map(mapping).fillna("Tidak Diketahui")
+            data[column] = data[column].map(mapping).fillna(
+                data[column].apply(lambda value: f"Kode dataset: {value}")
+            )
 
     return data
 
@@ -752,114 +1023,247 @@ with tab_new:
         "semester 1 dan semester 2 yang tersedia."
     )
 
+    st.markdown(
+        '<div class="search-note">'
+        '<strong>💡 Input kategorikal menggunakan label deskriptif.</strong> '
+        'Kode numerik dataset disimpan secara internal sebelum data dikirim '
+        'ke model Machine Learning.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
     with st.expander("👤 Data Demografi & Pendaftaran", expanded=True):
         c1, c2, c3 = st.columns(3)
 
         with c1:
-            marital_options = get_valid_options("Marital_status", [1, 2, 3, 4, 5, 6])
-            appmode_options = get_valid_options("Application_mode", list(range(1, 58)))
-            apporder_options = get_valid_options("Application_order", list(range(0, 10)))
-            course_options = get_valid_options("Course", [1])
+            marital_options, marital_map = get_category_options(
+                "Marital_status", [1, 2, 3, 4, 5, 6]
+            )
+            appmode_options, appmode_map = get_category_options(
+                "Application_mode", list(range(1, 58))
+            )
+            apporder_options, apporder_map = get_category_options(
+                "Application_order", list(range(0, 10))
+            )
+            course_options, course_map = get_category_options(
+                "Course", [1]
+            )
 
-            new_marital = st.selectbox("Marital status", marital_options, key="n_marital")
-            new_application_mode = st.selectbox("Application mode", appmode_options, key="n_appmode")
-            new_application_order = st.selectbox("Application order", apporder_options, key="n_apporder")
-            new_course = st.selectbox("Course", course_options, key="n_course")
-            new_daytime = st.selectbox(
-                "Daytime/evening attendance", [1, 0],
-                format_func=lambda x: "Siang" if x == 1 else "Malam",
+            new_marital_label = st.selectbox(
+                "Marital status",
+                marital_options,
+                key="n_marital",
+            )
+            new_application_mode_label = st.selectbox(
+                "Application mode",
+                appmode_options,
+                key="n_appmode",
+            )
+            new_application_order_label = st.selectbox(
+                "Application order",
+                apporder_options,
+                key="n_apporder",
+            )
+            new_course_label = st.selectbox(
+                "Course / Program Studi",
+                course_options,
+                key="n_course",
+            )
+
+            new_marital = marital_map[new_marital_label]
+            new_application_mode = appmode_map[new_application_mode_label]
+            new_application_order = apporder_map[new_application_order_label]
+            new_course = course_map[new_course_label]
+
+            daytime_options, daytime_map = get_category_options(
+                "Daytime_evening_attendance", [1, 0]
+            )
+            new_daytime_label = st.selectbox(
+                "Waktu kuliah",
+                daytime_options,
                 key="n_daytime",
             )
-            prevqual_options = get_valid_options("Previous_qualification", [1])
-            new_previous_qualification = st.selectbox(
-                "Previous qualification", prevqual_options, key="n_prevqual"
+            new_daytime = daytime_map[new_daytime_label]
+
+            prevqual_options, prevqual_map = get_category_options(
+                "Previous_qualification", [1]
             )
+            new_previous_qualification_label = st.selectbox(
+                "Pendidikan/kualifikasi sebelumnya",
+                prevqual_options,
+                key="n_prevqual",
+            )
+            new_previous_qualification = prevqual_map[
+                new_previous_qualification_label
+            ]
 
         with c2:
             pg_min, pg_max, pg_default = get_numeric_bounds(
                 "Previous_qualification_grade", 0.0, 200.0, 120.0
             )
             new_previous_grade = st.number_input(
-                "Previous qualification grade", min_value=pg_min, max_value=pg_max,
-                value=pg_default, step=0.1, key="n_prevgrade"
+                "Nilai kualifikasi sebelumnya",
+                min_value=pg_min,
+                max_value=pg_max,
+                value=pg_default,
+                step=0.1,
+                key="n_prevgrade",
             )
 
-            nationality_options = get_valid_options("Nacionality", [1])
-            motherqual_options = get_valid_options("Mothers_qualification", [1])
-            fatherqual_options = get_valid_options("Fathers_qualification", [1])
-            motherocc_options = get_valid_options("Mothers_occupation", [0])
-            fatherocc_options = get_valid_options("Fathers_occupation", [0])
+            nationality_options, nationality_map = get_category_options(
+                "Nacionality", [1]
+            )
+            motherqual_options, motherqual_map = get_category_options(
+                "Mothers_qualification", [1]
+            )
+            fatherqual_options, fatherqual_map = get_category_options(
+                "Fathers_qualification", [1]
+            )
+            motherocc_options, motherocc_map = get_category_options(
+                "Mothers_occupation", [0]
+            )
+            fatherocc_options, fatherocc_map = get_category_options(
+                "Fathers_occupation", [0]
+            )
 
-            new_nationality = st.selectbox("Nacionality", nationality_options, key="n_nationality")
-            new_mother_qualification = st.selectbox(
-                "Mother's qualification", motherqual_options, key="n_motherqual"
+            new_nationality_label = st.selectbox(
+                "Kewarganegaraan",
+                nationality_options,
+                key="n_nationality",
             )
-            new_father_qualification = st.selectbox(
-                "Father's qualification", fatherqual_options, key="n_fatherqual"
+            new_mother_qualification_label = st.selectbox(
+                "Pendidikan ibu",
+                motherqual_options,
+                key="n_motherqual",
             )
-            new_mother_occupation = st.selectbox(
-                "Mother's occupation", motherocc_options, key="n_motherocc"
+            new_father_qualification_label = st.selectbox(
+                "Pendidikan ayah",
+                fatherqual_options,
+                key="n_fatherqual",
             )
-            new_father_occupation = st.selectbox(
-                "Father's occupation", fatherocc_options, key="n_fatherocc"
+            new_mother_occupation_label = st.selectbox(
+                "Pekerjaan ibu",
+                motherocc_options,
+                key="n_motherocc",
             )
+            new_father_occupation_label = st.selectbox(
+                "Pekerjaan ayah",
+                fatherocc_options,
+                key="n_fatherocc",
+            )
+
+            new_nationality = nationality_map[new_nationality_label]
+            new_mother_qualification = motherqual_map[
+                new_mother_qualification_label
+            ]
+            new_father_qualification = fatherqual_map[
+                new_father_qualification_label
+            ]
+            new_mother_occupation = motherocc_map[
+                new_mother_occupation_label
+            ]
+            new_father_occupation = fatherocc_map[
+                new_father_occupation_label
+            ]
 
         with c3:
             adm_min, adm_max, adm_default = get_numeric_bounds(
                 "Admission_grade", 0.0, 200.0, 120.0
             )
             new_admission_grade = st.number_input(
-                "Admission grade", min_value=adm_min, max_value=adm_max,
-                value=adm_default, step=0.1, key="n_admission"
+                "Nilai penerimaan (Admission grade)",
+                min_value=adm_min,
+                max_value=adm_max,
+                value=adm_default,
+                step=0.1,
+                key="n_admission",
             )
             age_min, age_max, age_default = get_numeric_bounds(
                 "Age_at_enrollment", 15, 80, 20
             )
             new_age = st.number_input(
-                "Age at enrollment", min_value=int(age_min), max_value=int(age_max),
-                value=int(round(age_default)), step=1, key="n_age"
+                "Usia saat pendaftaran",
+                min_value=int(age_min),
+                max_value=int(age_max),
+                value=int(round(age_default)),
+                step=1,
+                key="n_age",
             )
-            new_gender = st.selectbox(
-                "Gender", [0, 1],
-                format_func=lambda x: "Perempuan" if x == 0 else "Laki-laki",
+
+            gender_options, gender_map = get_category_options(
+                "Gender", [0, 1]
+            )
+            displaced_options, displaced_map = get_category_options(
+                "Displaced", [0, 1]
+            )
+            special_options, special_map = get_category_options(
+                "Educational_special_needs", [0, 1]
+            )
+            international_options, international_map = get_category_options(
+                "International", [0, 1]
+            )
+
+            new_gender_label = st.selectbox(
+                "Jenis kelamin",
+                gender_options,
                 key="n_gender",
             )
-            new_displaced = st.selectbox(
-                "Displaced", [0, 1],
-                format_func=lambda x: "Tidak" if x == 0 else "Ya",
+            new_displaced_label = st.selectbox(
+                "Pernah berpindah tempat tinggal",
+                displaced_options,
                 key="n_displaced",
             )
-            new_special_needs = st.selectbox(
-                "Educational special needs", [0, 1],
-                format_func=lambda x: "Tidak" if x == 0 else "Ya",
+            new_special_needs_label = st.selectbox(
+                "Kebutuhan pendidikan khusus",
+                special_options,
                 key="n_special",
             )
-            new_international = st.selectbox(
-                "International", [0, 1],
-                format_func=lambda x: "Tidak" if x == 0 else "Ya",
+            new_international_label = st.selectbox(
+                "Status mahasiswa internasional",
+                international_options,
                 key="n_international",
             )
 
+            new_gender = gender_map[new_gender_label]
+            new_displaced = displaced_map[new_displaced_label]
+            new_special_needs = special_map[new_special_needs_label]
+            new_international = international_map[new_international_label]
+
     with st.expander("💳 Kondisi Finansial", expanded=False):
         f1, f2, f3 = st.columns(3)
+
         with f1:
-            new_debtor = st.selectbox(
-                "Status Utang", [0, 1],
-                format_func=lambda x: "Tidak Berutang" if x == 0 else "Berutang",
+            debtor_options, debtor_map = get_category_options(
+                "Debtor", [0, 1]
+            )
+            new_debtor_label = st.selectbox(
+                "Status utang",
+                debtor_options,
                 key="n_debtor",
             )
+            new_debtor = debtor_map[new_debtor_label]
+
         with f2:
-            new_tuition = st.selectbox(
-                "Status Tuition Fees", [1, 0],
-                format_func=lambda x: "Up to Date" if x == 1 else "Not Up to Date",
+            tuition_options, tuition_map = get_category_options(
+                "Tuition_fees_up_to_date", [1, 0]
+            )
+            new_tuition_label = st.selectbox(
+                "Status pembayaran tuition fees",
+                tuition_options,
                 key="n_tuition",
             )
+            new_tuition = tuition_map[new_tuition_label]
+
         with f3:
-            new_scholarship = st.selectbox(
-                "Beasiswa", [0, 1],
-                format_func=lambda x: "Bukan Penerima Beasiswa" if x == 0 else "Penerima Beasiswa",
+            scholarship_options, scholarship_map = get_category_options(
+                "Scholarship_holder", [0, 1]
+            )
+            new_scholarship_label = st.selectbox(
+                "Status beasiswa",
+                scholarship_options,
                 key="n_scholarship",
             )
+            new_scholarship = scholarship_map[new_scholarship_label]
 
     with st.expander("📚 Performa Akademik Semester 1", expanded=True):
         s1a, s1b = st.columns(2)
@@ -1350,6 +1754,13 @@ with right:
         / course_summary["Total"]
     )
 
+    # Tampilkan nama program studi pada dashboard, bukan kode Course.
+    course_summary["Course"] = course_summary["Course"].map(
+        CATEGORY_LABELS["Course"]
+    ).fillna(
+        course_summary["Course"].apply(lambda value: f"Kode {value}")
+    )
+
     # Hindari course dengan jumlah data terlalu sedikit.
     course_summary = course_summary[
         course_summary["Total"] >= 20
@@ -1369,7 +1780,7 @@ with right:
         x="Dropout Rate",
         y="Course",
         orientation="h",
-        title="Top 10 Course berdasarkan Dropout Rate",
+        title="Top 10 Program Studi berdasarkan Dropout Rate",
         text="Dropout Rate",
     )
 
@@ -1386,7 +1797,7 @@ with right:
         template="plotly_white",
         margin=dict(l=10, r=35, t=55, b=10),
         xaxis_title="Dropout Rate",
-        yaxis_title="Course",
+        yaxis_title="Program Studi",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
     )

@@ -299,13 +299,86 @@ def load_data():
 # LOAD MODEL
 # ============================================================
 
+def find_model_file():
+    """
+    Mencari model secara robust di environment lokal maupun Streamlit Cloud.
+
+    Model utama tetap di root repository, sejajar dengan app.py.
+    Beberapa fallback path disediakan agar aplikasi tidak gagal hanya karena
+    working directory Streamlit berbeda.
+    """
+    candidates = [
+        MODEL_PATH,
+        BASE_DIR / "Data" / "student_dropout_model.pkl",
+        Path.cwd() / "student_dropout_model.pkl",
+        Path.cwd() / "Data" / "student_dropout_model.pkl",
+    ]
+
+    checked = []
+    for candidate in candidates:
+        candidate = candidate.resolve()
+        checked.append(str(candidate))
+        if candidate.is_file() and candidate.stat().st_size > 1024:
+            return candidate, checked
+
+    # Fallback terakhir: cari file dengan nama yang sama di dalam repository.
+    # Ini hanya untuk mengantisipasi struktur folder yang berbeda.
+    try:
+        for candidate in BASE_DIR.rglob("student_dropout_model.pkl"):
+            candidate = candidate.resolve()
+            if candidate.is_file() and candidate.stat().st_size > 1024:
+                return candidate, checked
+    except Exception:
+        pass
+
+    return None, checked
+
+
 @st.cache_resource(show_spinner="Memuat model Machine Learning...")
 def load_model():
-    if not MODEL_PATH.exists():
+    model_path, checked_paths = find_model_file()
+
+    if model_path is None:
+        # Jangan diam-diam mengembalikan None tanpa informasi.
+        # Pesan ini membantu memastikan masalah deployment dapat ditemukan.
+        st.error(
+            "❌ Model Machine Learning tidak ditemukan di deployment. "
+            "Pastikan `student_dropout_model.pkl` berada di repository dan "
+            "sejajar dengan `app.py`."
+        )
+        with st.expander("🔍 Detail pemeriksaan file model"):
+            st.code(
+                "BASE_DIR = " + str(BASE_DIR) + "\n"
+                "Working directory = " + str(Path.cwd()) + "\n\n"
+                "Path yang diperiksa:\n- "
+                + "\n- ".join(checked_paths),
+                language="text",
+            )
         return None
 
-    with open(MODEL_PATH, "rb") as file:
-        model = pickle.load(file)
+    # Deteksi Git LFS pointer. Jika yang terunduh hanya pointer, pickle
+    # tidak dapat digunakan sebagai model inference.
+    try:
+        with open(model_path, "rb") as file:
+            header = file.read(120)
+        if b"git-lfs.github.com/spec" in header:
+            raise RuntimeError(
+                "File student_dropout_model.pkl terdeteksi sebagai Git LFS pointer, "
+                "bukan file model binary. Upload file .pkl asli ke repository "
+                "tanpa Git LFS."
+            )
+    except OSError as error:
+        raise RuntimeError(f"Model ditemukan tetapi tidak dapat dibaca: {error}")
+
+    try:
+        with open(model_path, "rb") as file:
+            model = pickle.load(file)
+    except Exception as error:
+        raise RuntimeError(
+            "Model ditemukan tetapi gagal dimuat. Pastikan versi library pada "
+            "requirements.txt sesuai dengan environment saat model dibuat. "
+            f"Detail: {error}"
+        ) from error
 
     # Pastikan file yang dimuat benar-benar model binary,
     # bukan model_metadata.pkl.
@@ -1640,8 +1713,14 @@ st.markdown(
 )
 
 if model is not None:
+    model_file, _ = find_model_file()
+    model_size_mb = (model_file.stat().st_size / (1024 ** 2)) if model_file else 0
     st.success(
         "Model `student_dropout_model.pkl` berhasil dimuat dan siap melakukan prediksi."
+    )
+    st.caption(
+        f"Model aktif: `{model_file.name if model_file else 'student_dropout_model.pkl'}` "
+        f"• ukuran {model_size_mb:.2f} MB • binary classes [0 = Graduate, 1 = Dropout]"
     )
     info_cols = st.columns(4)
     info_cols[0].metric(

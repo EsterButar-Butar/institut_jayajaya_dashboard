@@ -211,6 +211,28 @@ st.markdown(
         margin-top: 12px;
     }
 
+    .action-card {
+        background: #F7FAF9;
+        border: 1px solid #D9E7E2;
+        border-radius: 16px;
+        padding: 16px 18px;
+        margin: 12px 0 18px 0;
+        box-shadow: 0 5px 16px rgba(18,60,53,0.05);
+    }
+
+    .action-title {
+        color: #123C35;
+        font-size: 1rem;
+        font-weight: 800;
+        margin-bottom: 7px;
+    }
+
+    .action-note {
+        color: #5D6D68;
+        font-size: 0.86rem;
+        line-height: 1.5;
+    }
+
     .footer-card {
         background: #123C35;
         color: #DDEBE7;
@@ -489,6 +511,110 @@ def predict_student(row, model):
         risk_level,
         probability_dict,
     )
+
+
+# ============================================================
+# ACTION ITEMS BERDASARKAN HASIL ANALISIS
+# ============================================================
+
+def build_action_items(row, risk_level):
+    """
+    Menyusun action items yang spesifik berdasarkan:
+    1) Risk Level hasil model,
+    2) indikator akademik yang menjadi temuan utama,
+    3) indikator pembayaran/finansial yang ditemukan pada EDA.
+
+    Perbandingan akademik menggunakan median dataset agar tidak memakai
+    threshold angka yang dibuat secara arbitrer.
+    """
+    engineered = create_features(row)
+
+    s1_approval = float(engineered["Approval_Rate_1st_Sem"].iloc[0])
+    s2_approval = float(engineered["Approval_Rate_2nd_Sem"].iloc[0])
+    avg_grade = float(engineered["Average_Semester_Grade"].iloc[0])
+
+    # Baseline dataset untuk menentukan apakah indikator mahasiswa relatif rendah.
+    reference = create_features(df.drop(columns=["Status"], errors="ignore"))
+    s1_median = float(reference["Approval_Rate_1st_Sem"].median())
+    s2_median = float(reference["Approval_Rate_2nd_Sem"].median())
+    grade_median = float(reference["Average_Semester_Grade"].median())
+
+    academic_flags = []
+    if s2_approval < s2_median:
+        academic_flags.append(
+            f"Approval Rate Semester 2 ({s2_approval:.1%}) berada di bawah "
+            f"median dataset ({s2_median:.1%})."
+        )
+    if s1_approval < s1_median:
+        academic_flags.append(
+            f"Approval Rate Semester 1 ({s1_approval:.1%}) berada di bawah "
+            f"median dataset ({s1_median:.1%})."
+        )
+    if avg_grade < grade_median:
+        academic_flags.append(
+            f"Rata-rata nilai dua semester ({avg_grade:.2f}) berada di bawah "
+            f"median dataset ({grade_median:.2f})."
+        )
+
+    debtor = int(row["Debtor"].iloc[0]) if "Debtor" in row.columns else 0
+    tuition = int(row["Tuition_fees_up_to_date"].iloc[0]) if "Tuition_fees_up_to_date" in row.columns else 1
+    scholarship = int(row["Scholarship_holder"].iloc[0]) if "Scholarship_holder" in row.columns else 1
+
+    financial_flags = []
+    if tuition == 0:
+        financial_flags.append(
+            "Status pembayaran tuition fees belum Up to Date."
+        )
+    if debtor == 1:
+        financial_flags.append(
+            "Mahasiswa tercatat memiliki status Berutang."
+        )
+    if scholarship == 0:
+        financial_flags.append(
+            "Mahasiswa bukan penerima beasiswa; kondisi finansial perlu "
+            "diverifikasi bila terdapat kendala pembayaran."
+        )
+
+    actions = []
+
+    if risk_level == "High Risk":
+        actions.append(
+            "PRIORITAS 1 — Lakukan verifikasi individual oleh Dosen PA/Program "
+            "Studi dan hubungi mahasiswa untuk mengonfirmasi penyebab risiko "
+            "sebelum menentukan intervensi."
+        )
+    elif risk_level == "Medium Risk":
+        actions.append(
+            "PRIORITAS 2 — Lakukan monitoring terjadwal oleh Dosen PA/Program "
+            "Studi dan evaluasi ulang indikator akademik agar risiko tidak meningkat."
+        )
+    else:
+        actions.append(
+            "PRIORITAS 3 — Lanjutkan monitoring rutin oleh pihak akademik; "
+            "belum diperlukan intervensi intensif hanya berdasarkan model."
+        )
+
+    if academic_flags:
+        actions.append(
+            "Intervensi akademik: evaluasi mata kuliah yang belum disetujui, "
+            "tawarkan tutoring/pendampingan belajar, dan susun rencana studi "
+            "yang lebih terarah."
+        )
+
+    if financial_flags:
+        actions.append(
+            "Verifikasi finansial: koordinasikan dengan Bagian Keuangan/ "
+            "Kemahasiswaan untuk mengecek kendala pembayaran dan, bila sesuai "
+            "kebijakan, informasikan opsi beasiswa, keringanan, atau cicilan."
+        )
+
+    if not academic_flags and not financial_flags:
+        actions.append(
+            "Lakukan pengecekan akademik dan administratif secara berkala "
+            "sebagai langkah pencegahan."
+        )
+
+    return academic_flags, financial_flags, actions
 
 
 # ============================================================
@@ -865,6 +991,35 @@ with tab_new:
                 "Hasil merupakan screening berbasis data, bukan keputusan akhir."
             )
 
+            academic_flags, financial_flags, action_items = build_action_items(
+                new_student,
+                risk_level
+            )
+
+            st.markdown("#### 🎯 Action Items yang Disarankan")
+            st.markdown('<div class="action-card">', unsafe_allow_html=True)
+
+            if academic_flags:
+                st.markdown("**Dasar akademik:**")
+                for item in academic_flags:
+                    st.markdown(f"- {item}")
+
+            if financial_flags:
+                st.markdown("**Dasar administratif/finansial:**")
+                for item in financial_flags:
+                    st.markdown(f"- {item}")
+
+            st.markdown("**Tindakan prioritas:**")
+            for item in action_items:
+                st.markdown(f"- {item}")
+
+            st.caption(
+                "Action items mengacu pada risk level model dan indikator yang "
+                "teridentifikasi dari data. Feature importance dan dropout rate "
+                "bersifat deskriptif/interpretatif, bukan bukti sebab-akibat."
+            )
+            st.markdown("</div>", unsafe_allow_html=True)
+
             probability_df = pd.DataFrame({
                 "Status": list(probability_dict.keys()),
                 "Probability": list(probability_dict.values()),
@@ -875,7 +1030,7 @@ with tab_new:
                 x="Status",
                 y="Probability",
                 text="Probability",
-                title="Probabilitas Prediksi Mahasiswa Baru",
+                title="Probabilitas Prediksi Mahasiswa",
             )
             fig_new.update_traces(
                 texttemplate="%{text:.2%}",
@@ -948,6 +1103,35 @@ if predict_existing_button:
         f'<span style="font-size:1.35rem">{risk_level}</span></div>',
         unsafe_allow_html=True,
     )
+
+    academic_flags, financial_flags, action_items = build_action_items(
+        row,
+        risk_level
+    )
+
+    st.markdown("#### 🎯 Action Items yang Disarankan")
+    st.markdown('<div class="action-card">', unsafe_allow_html=True)
+
+    if academic_flags:
+        st.markdown("**Dasar akademik:**")
+        for item in academic_flags:
+            st.markdown(f"- {item}")
+
+    if financial_flags:
+        st.markdown("**Dasar administratif/finansial:**")
+        for item in financial_flags:
+            st.markdown(f"- {item}")
+
+    st.markdown("**Tindakan prioritas:**")
+    for item in action_items:
+        st.markdown(f"- {item}")
+
+    st.caption(
+        "Action items mengacu pada risk level model dan indikator yang "
+        "teridentifikasi dari data. Feature importance dan dropout rate "
+        "bersifat deskriptif/interpretatif, bukan bukti sebab-akibat."
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("#### Probabilitas Prediksi")
 

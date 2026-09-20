@@ -18,7 +18,7 @@ st.set_page_config(
     page_title="Jaya Jaya Institut | Dropout Analytics",
     page_icon="🎓",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 
@@ -41,101 +41,203 @@ st.markdown(
     """
     <style>
     .stApp {
-        background-color: #F7F9FC;
+        background: linear-gradient(180deg, #F5F8F7 0%, #F8FAFC 45%, #FFFFFF 100%);
     }
 
-    [data-testid="stSidebar"] {
-        background-color: #123C35;
+    section[data-testid="stSidebar"] {
+        display: none !important;
     }
 
-    [data-testid="stSidebar"] * {
-        color: white !important;
+    .block-container {
+        max-width: 1450px;
+        padding-top: 2rem;
+        padding-bottom: 2.5rem;
     }
 
-    /* Search / Student Index input */
-    [data-testid="stSidebar"] input {
-        color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
-        background-color: #FFFFFF !important;
-        caret-color: #000000 !important;
+    .hero {
+        background: linear-gradient(135deg, #123C35 0%, #176052 55%, #1E7765 100%);
+        border-radius: 22px;
+        padding: 30px 34px;
+        margin-bottom: 18px;
+        box-shadow: 0 12px 30px rgba(18, 60, 53, 0.16);
+        color: white;
     }
 
-    [data-testid="stSidebar"] input::placeholder {
-        color: #555555 !important;
-        -webkit-text-fill-color: #555555 !important;
-        opacity: 1 !important;
+    .hero-title {
+        font-size: 2.25rem;
+        font-weight: 850;
+        line-height: 1.15;
+        margin: 0 0 8px 0;
+        letter-spacing: -0.02em;
     }
 
-    [data-testid="stSidebar"] [data-baseweb="input"] {
-        background-color: #FFFFFF !important;
-        border-radius: 10px !important;
-    }
-
-    .main-title {
-        font-size: 2.15rem;
-        font-weight: 800;
-        color: #123C35;
-        margin-bottom: 0.15rem;
-    }
-
-    .subtitle {
-        color: #61706C;
+    .hero-subtitle {
+        color: #DCEDE8;
         font-size: 1rem;
-        margin-bottom: 1.3rem;
+        line-height: 1.55;
+        margin: 0;
+        max-width: 900px;
+    }
+
+    .hero-badge {
+        display: inline-block;
+        margin-top: 15px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.13);
+        border: 1px solid rgba(255,255,255,0.22);
+        color: #FFFFFF;
+        font-size: 0.82rem;
+        font-weight: 700;
     }
 
     .section-title {
         color: #123C35;
-        font-size: 1.25rem;
-        font-weight: 750;
-        margin-top: 0.8rem;
-        margin-bottom: 0.7rem;
+        font-size: 1.22rem;
+        font-weight: 800;
+        margin-top: 1.35rem;
+        margin-bottom: 0.65rem;
+    }
+
+    .section-caption {
+        color: #64736F;
+        font-size: 0.9rem;
+        margin-top: -0.3rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .search-note {
+        background: #EAF5F1;
+        border: 1px solid #CFE6DE;
+        border-radius: 12px;
+        padding: 12px 15px;
+        color: #315A50;
+        font-size: 0.88rem;
+        line-height: 1.45;
+        margin-top: 0.45rem;
+    }
+
+    div[data-testid="stMetric"] {
+        background: rgba(255,255,255,0.96);
+        border: 1px solid #E2EAE7;
+        border-radius: 16px;
+        padding: 1rem 1.05rem;
+        box-shadow: 0 5px 16px rgba(18,60,53,0.06);
+        min-height: 108px;
+    }
+
+    div[data-testid="stMetricLabel"] {
+        color: #64736F !important;
+        font-weight: 650 !important;
+    }
+
+    div[data-testid="stMetricValue"] {
+        color: #123C35 !important;
+        font-weight: 800 !important;
+    }
+
+    .model-card {
+        background: linear-gradient(135deg, #FFFFFF 0%, #F4FAF8 100%);
+        border: 1px solid #D8E8E2;
+        border-radius: 18px;
+        padding: 18px 20px;
+        margin: 8px 0 14px 0;
+        box-shadow: 0 7px 20px rgba(18,60,53,0.05);
+    }
+
+    .model-title {
+        color: #123C35;
+        font-size: 1.05rem;
+        font-weight: 800;
+        margin-bottom: 5px;
+    }
+
+    .model-note {
+        color: #5D6D68;
+        font-size: 0.9rem;
+        line-height: 1.55;
+    }
+
+    .ready-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: #E5F6ED;
+        color: #21613D;
+        font-size: 0.78rem;
+        font-weight: 800;
+        margin-top: 8px;
     }
 
     .prediction-box {
-        background: white;
-        border: 1px solid #E3E8ED;
-        border-radius: 12px;
-        padding: 18px;
-        margin-top: 12px;
-        margin-bottom: 20px;
+        background: #FFFFFF;
+        border: 1px solid #DDE8E4;
+        border-radius: 18px;
+        padding: 20px;
+        margin: 10px 0 22px 0;
+        box-shadow: 0 8px 24px rgba(18,60,53,0.07);
     }
 
     .risk-high {
         background-color: #FDECEC;
         border: 1px solid #F2B8B5;
-        padding: 0.8rem;
-        border-radius: 10px;
+        padding: 0.85rem;
+        border-radius: 12px;
         color: #9C2F2B;
-        font-weight: 700;
+        font-weight: 750;
         text-align: center;
+        margin-top: 12px;
     }
 
     .risk-medium {
         background-color: #FFF5DF;
         border: 1px solid #F1D18A;
-        padding: 0.8rem;
-        border-radius: 10px;
+        padding: 0.85rem;
+        border-radius: 12px;
         color: #8A5A00;
-        font-weight: 700;
+        font-weight: 750;
         text-align: center;
+        margin-top: 12px;
     }
 
     .risk-low {
         background-color: #EAF7EF;
         border: 1px solid #B7DEC2;
-        padding: 0.8rem;
-        border-radius: 10px;
+        padding: 0.85rem;
+        border-radius: 12px;
         color: #22643A;
-        font-weight: 700;
+        font-weight: 750;
         text-align: center;
+        margin-top: 12px;
     }
 
-    div[data-testid="stMetric"] {
-        background: white;
-        border: 1px solid #E5EAF0;
-        padding: 0.75rem 0.9rem;
+    .footer-card {
+        background: #123C35;
+        color: #DDEBE7;
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-top: 24px;
+        text-align: center;
+        font-size: 0.82rem;
+        line-height: 1.55;
+    }
+
+    .stButton > button {
         border-radius: 12px;
+        min-height: 44px;
+        font-weight: 750;
+        border: 0;
+        box-shadow: 0 5px 14px rgba(18,60,53,0.12);
+    }
+
+    div[data-testid="stDataFrame"] {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #E0E8E5;
+    }
+
+    hr {
+        border-color: #DCE6E2 !important;
     }
     </style>
     """,
@@ -301,6 +403,39 @@ def create_features(dataframe):
 
 
 # ============================================================
+# DISPLAY LABELS
+# ============================================================
+
+def map_display_labels(dataframe):
+    data = dataframe.copy()
+
+    mappings = {
+        "Gender": {
+            0: "Perempuan",
+            1: "Laki-laki"
+        },
+        "Debtor": {
+            0: "Tidak Berutang",
+            1: "Berutang"
+        },
+        "Tuition_fees_up_to_date": {
+            0: "Not Up to Date",
+            1: "Up to Date"
+        },
+        "Scholarship_holder": {
+            0: "Bukan Penerima Beasiswa",
+            1: "Penerima Beasiswa"
+        },
+    }
+
+    for column, mapping in mappings.items():
+        if column in data.columns:
+            data[column] = data[column].map(mapping).fillna("Tidak Diketahui")
+
+    return data
+
+
+# ============================================================
 # PREDICTION FOR SELECTED STUDENT
 # ============================================================
 
@@ -380,16 +515,40 @@ except Exception as error:
 
 
 # ============================================================
-# SIDEBAR — ONLY FOR STUDENT SEARCH / MODEL
+# DASHBOARD HEADER
 # ============================================================
 
-with st.sidebar:
-    st.markdown("## 🎓 Jaya Jaya Institut")
-    st.caption("Student Dropout Analytics")
-    st.divider()
+st.markdown(
+    """
+    <div class="hero">
+        <div class="hero-title">🎓 Dashboard Analisis & Prediksi Dropout Mahasiswa</div>
+        <p class="hero-subtitle">
+            Monitoring status mahasiswa, performa akademik, dan penerapan
+            Machine Learning untuk membantu proses screening dropout.
+        </p>
+        <span class="hero-badge">Binary Classification • Graduate vs Dropout</span>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-    st.markdown("### 🔎 Cari Student")
 
+# ============================================================
+# CARI STUDENT / SCREENING
+# ============================================================
+
+st.markdown(
+    '<div class="section-title">🔎 Cari Student untuk Screening</div>',
+    unsafe_allow_html=True,
+)
+st.markdown(
+    '<div class="section-caption">Pilih mahasiswa berstatus Enrolled untuk melihat hasil screening model.</div>',
+    unsafe_allow_html=True,
+)
+
+search_col, button_col, info_col = st.columns([2.2, 1.2, 2.2])
+
+with search_col:
     if len(df_enrolled) > 0:
         student_index = st.number_input(
             "Student Index",
@@ -403,47 +562,25 @@ with st.sidebar:
         student_index = 1
         st.warning("Tidak terdapat mahasiswa dengan status Enrolled.")
 
+with button_col:
+    st.markdown("<div style='height: 28px'></div>", unsafe_allow_html=True)
     predict_button = st.button(
         "🔮 Terapkan Model",
         type="primary",
         use_container_width=True,
     )
 
-    st.divider()
-
-    st.caption(
-        f"Total data Enrolled untuk screening: {len(df_enrolled):,}"
+with info_col:
+    st.markdown(
+        f"""
+        <div class="search-note">
+            <strong>{len(df_enrolled):,} mahasiswa Enrolled</strong> tersedia untuk screening.<br>
+            Student Index adalah nomor referensi baris pada data Enrolled,
+            bukan Student ID asli.
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-
-    if model is None:
-        st.warning("Model binary belum tersedia.")
-    else:
-        st.success("Model binary siap digunakan.")
-
-    st.caption(
-        "Student Index merupakan referensi baris pada data Enrolled "
-        "karena dataset tidak menyediakan Student ID asli."
-    )
-
-
-# ============================================================
-# DASHBOARD HEADER
-# ============================================================
-
-st.markdown(
-    '<div class="main-title">'
-    'DASHBOARD ANALISIS & PREDIKSI DROPOUT MAHASISWA'
-    '</div>',
-    unsafe_allow_html=True,
-)
-
-st.markdown(
-    '<div class="subtitle">'
-    'Monitoring status mahasiswa, performa akademik, '
-    'dan penerapan model Machine Learning untuk screening dropout.'
-    '</div>',
-    unsafe_allow_html=True,
-)
 
 
 # ============================================================
@@ -460,27 +597,63 @@ dropout_rate = dropout / total if total else 0
 graduate_rate = graduate / total if total else 0
 enrolled_rate = enrolled / total if total else 0
 
-c1, c2, c3, c4 = st.columns(4)
+c1, c2, c3, c4, c5 = st.columns(5)
 
-c1.metric(
-    "Total Mahasiswa",
-    f"{total:,}",
+c1.metric("Total Mahasiswa", f"{total:,}")
+c2.metric("Jumlah Dropout", f"{dropout:,}")
+c3.metric("Dropout Rate", f"{dropout_rate:.2%}")
+c4.metric("Graduate Rate", f"{graduate_rate:.2%}")
+c5.metric("Enrolled Rate", f"{enrolled_rate:.2%}")
+
+
+# ============================================================
+# MACHINE LEARNING PROTOTYPE
+# ============================================================
+
+st.markdown(
+    '<div class="section-title">🤖 Prototype Machine Learning</div>',
+    unsafe_allow_html=True,
 )
 
-c2.metric(
-    "Dropout Rate",
-    f"{dropout_rate:.2%}",
+st.markdown(
+    '''
+    <div class="model-card">
+        <div class="model-title">🤖 Binary Dropout Screening</div>
+        <div class="model-note">
+            Prototype menggunakan model klasifikasi biner untuk membedakan
+            <strong>Graduate</strong> dan <strong>Dropout</strong>.
+            Data <strong>Enrolled</strong> tidak digunakan sebagai kelas training,
+            tetapi disimpan terpisah untuk proses screening/prediksi.
+        </div>
+        <span class="ready-badge">● Model siap digunakan</span>
+    </div>
+    ''',
+    unsafe_allow_html=True,
 )
 
-c3.metric(
-    "Graduate Rate",
-    f"{graduate_rate:.2%}",
-)
-
-c4.metric(
-    "Enrolled Rate",
-    f"{enrolled_rate:.2%}",
-)
+if model is not None:
+    info_cols = st.columns(4)
+    info_cols[0].metric(
+        "Model",
+        model_metadata.get("model_name", "XGBoost")
+    )
+    info_cols[1].metric(
+        "Accuracy",
+        f"{float(model_metadata.get('accuracy_test', 0)):.2%}"
+    )
+    info_cols[2].metric(
+        "Precision Dropout",
+        f"{float(model_metadata.get('dropout_precision', 0)):.2%}"
+    )
+    info_cols[3].metric(
+        "Recall Dropout",
+        f"{float(model_metadata.get('dropout_recall', 0)):.2%}"
+    )
+else:
+    st.info(
+        "Model belum tersedia. Tambahkan `student_dropout_model.pkl` "
+        "hasil training binary ke repository untuk mengaktifkan screening."
+    )
 
 
 # ============================================================
@@ -508,9 +681,15 @@ if predict_button:
 
     st.markdown(
         '<div class="section-title">'
-        '🔮 Hasil Penerapan Model'
+        '🔮 Hasil Screening Mahasiswa'
         '</div>',
         unsafe_allow_html=True,
+    )
+
+    st.info(
+        "Hasil ini merupakan screening awal berdasarkan data akademik yang "
+        "tersedia. Prediksi perlu diverifikasi oleh pihak institusi dan "
+        "bukan merupakan keputusan akhir mengenai kondisi mahasiswa."
     )
 
     st.markdown(
@@ -586,7 +765,10 @@ if predict_button:
     )
 
     fig_probability.update_layout(
+        template="plotly_white",
         margin=dict(l=10, r=10, t=55, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
 
     st.plotly_chart(
@@ -618,8 +800,10 @@ if predict_button:
         if column in row.columns
     ]
 
+    display_row = map_display_labels(row[summary_columns])
+
     st.dataframe(
-        row[summary_columns],
+        display_row,
         use_container_width=True,
         hide_index=True,
     )
@@ -635,9 +819,11 @@ if predict_button:
 # ============================================================
 
 st.markdown(
-    '<div class="section-title">'
-    'Distribusi Status & Dropout'
-    '</div>',
+    '<div class="section-title">📊 Distribusi Status & Dropout</div>',
+    unsafe_allow_html=True,
+)
+st.markdown(
+    '<div class="section-caption">Ringkasan status mahasiswa dan variasi dropout berdasarkan course.</div>',
     unsafe_allow_html=True,
 )
 
@@ -679,7 +865,11 @@ with left:
     )
 
     fig_status.update_layout(
+        template="plotly_white",
         margin=dict(l=10, r=10, t=55, b=10),
+        legend_title_text="Status",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
 
     st.plotly_chart(
@@ -744,9 +934,12 @@ with right:
     )
 
     fig_course.update_layout(
+        template="plotly_white",
         margin=dict(l=10, r=35, t=55, b=10),
         xaxis_title="Dropout Rate",
         yaxis_title="Course",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
 
     st.plotly_chart(
@@ -760,9 +953,11 @@ with right:
 # ============================================================
 
 st.markdown(
-    '<div class="section-title">'
-    'Performa Akademik & Kondisi Finansial'
-    '</div>',
+    '<div class="section-title">📚 Performa Akademik & Kondisi Finansial</div>',
+    unsafe_allow_html=True,
+)
+st.markdown(
+    '<div class="section-caption">Perbandingan performa akademik serta kondisi pembayaran dan finansial mahasiswa.</div>',
     unsafe_allow_html=True,
 )
 
@@ -814,6 +1009,14 @@ with a1:
         color="Semester",
         barmode="group",
         title="Perbandingan Performa Semester 1 vs Semester 2",
+        text_auto=".1f",
+    )
+
+    fig_academic.update_layout(
+        template="plotly_white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=10, r=10, t=55, b=10),
     )
 
     st.plotly_chart(
@@ -855,6 +1058,13 @@ with a2:
         title="Status Pembayaran Tuition Fees",
     )
 
+    fig_payment.update_layout(
+        template="plotly_white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=10, r=10, t=55, b=10),
+    )
+
     fig_payment.update_traces(
         textposition="inside",
         textinfo="percent+label",
@@ -885,20 +1095,16 @@ with f1:
         unsafe_allow_html=True,
     )
 
-    financial = (
-        df["Debtor"]
-        .map({
-            0: "Tidak Berutang",
-            1: "Berutang",
-        })
-        .fillna("Tidak Diketahui")
-    )
+    financial = df["Debtor"].map({
+        0: "Tidak Berutang",
+        1: "Berutang",
+    })
 
     financial_counts = (
         financial
         .value_counts()
         .reindex(
-            ["Tidak Berutang", "Berutang", "Tidak Diketahui"],
+            ["Tidak Berutang", "Berutang"],
             fill_value=0,
         )
         .reset_index()
@@ -922,9 +1128,12 @@ with f1:
     )
 
     fig_financial.update_layout(
+        template="plotly_white",
         margin=dict(l=10, r=10, t=55, b=10),
         xaxis_title="Status Finansial",
         yaxis_title="Jumlah Mahasiswa",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
 
     st.plotly_chart(
@@ -1007,9 +1216,12 @@ with f2:
     )
 
     fig_approval.update_layout(
+        template="plotly_white",
         margin=dict(l=10, r=10, t=55, b=10),
         xaxis_title="Status Mahasiswa",
         yaxis_title="Approval Rate",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
 
     st.plotly_chart(
@@ -1017,19 +1229,27 @@ with f2:
         use_container_width=True,
     )
 
+st.info(
+    "Catatan: visualisasi dashboard bersifat deskriptif untuk membantu "
+    "monitoring. Perbedaan antar kelompok tidak secara langsung menunjukkan "
+    "hubungan sebab-akibat."
+)
+
 
 # ============================================================
 # FOOTER
 # ============================================================
 
-st.divider()
-
-st.caption(
-    "Jaya Jaya Institut — Student Dropout Analytics & "
-    "Binary Dropout Screening Prototype"
-)
-
-st.caption(
-    "Student Index merupakan nomor referensi baris dataset, "
-    "bukan Student ID asli."
+st.markdown(
+    """
+    <div class="footer-card">
+        <strong>🎓 Jaya Jaya Institut</strong><br>
+        Student Dropout Analytics & Binary Dropout Screening Prototype<br>
+        <span style="opacity:0.8;">
+            Student Index merupakan nomor referensi baris pada data Enrolled,
+            bukan Student ID asli.
+        </span>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )

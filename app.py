@@ -533,55 +533,394 @@ st.markdown(
 )
 
 
+
 # ============================================================
-# CARI STUDENT / SCREENING
+# PREDICTION / SCREENING
 # ============================================================
 
 st.markdown(
-    '<div class="section-title">🔎 Cari Student untuk Screening</div>',
+    '<div class="section-title">🔎 Screening & Prediksi Mahasiswa</div>',
     unsafe_allow_html=True,
 )
 st.markdown(
-    '<div class="section-caption">Pilih mahasiswa berstatus Enrolled untuk melihat hasil screening model.</div>',
+    '<div class="section-caption">'
+    'Prototype menyediakan screening data Enrolled dan prediksi langsung '
+    'untuk mahasiswa baru.'
+    '</div>',
     unsafe_allow_html=True,
 )
 
-search_col, button_col, info_col = st.columns([2.2, 1.2, 2.2])
+tab_existing, tab_new = st.tabs([
+    "🎓 Screening Mahasiswa Enrolled",
+    "📝 Prediksi Mahasiswa Baru",
+])
 
-with search_col:
-    if len(df_enrolled) > 0:
-        student_index = st.number_input(
-            "Student Index",
-            min_value=1,
-            max_value=len(df_enrolled),
-            value=1,
-            step=1,
-            help="Pilih nomor referensi mahasiswa Enrolled untuk screening.",
-        )
-    else:
-        student_index = 1
-        st.warning("Tidak terdapat mahasiswa dengan status Enrolled.")
+# ------------------------------------------------------------
+# EXISTING ENROLLED STUDENT
+# ------------------------------------------------------------
 
-with button_col:
-    st.markdown("<div style='height: 28px'></div>", unsafe_allow_html=True)
-    predict_button = st.button(
-        "🔮 Terapkan Model",
-        type="primary",
-        use_container_width=True,
-    )
-
-with info_col:
+with tab_existing:
     st.markdown(
-        f"""
-        <div class="search-note">
-            <strong>{len(df_enrolled):,} mahasiswa Enrolled</strong> tersedia untuk screening.<br>
-            Student Index adalah nomor referensi baris pada data Enrolled,
-            bukan Student ID asli.
-        </div>
-        """,
+        f'<div class="search-note"><strong>{len(df_enrolled):,} mahasiswa Enrolled</strong> '
+        'tersedia untuk screening. Student Index adalah nomor referensi baris pada '
+        'data Enrolled, bukan Student ID asli.</div>',
         unsafe_allow_html=True,
     )
 
+    if len(df_enrolled) > 0:
+        search_col, button_col = st.columns([2.2, 1.2])
+
+        with search_col:
+            student_index = st.number_input(
+                "Student Index",
+                min_value=1,
+                max_value=len(df_enrolled),
+                value=1,
+                step=1,
+                help="Pilih nomor referensi mahasiswa Enrolled.",
+                key="existing_student_index",
+            )
+
+        with button_col:
+            st.markdown("<div style='height: 28px'></div>", unsafe_allow_html=True)
+            predict_existing_button = st.button(
+                "🔮 Terapkan Model",
+                type="primary",
+                use_container_width=True,
+                key="predict_existing",
+            )
+    else:
+        student_index = 1
+        predict_existing_button = False
+        st.warning("Tidak terdapat mahasiswa dengan status Enrolled.")
+
+# ------------------------------------------------------------
+# NEW STUDENT PREDICTION
+# ------------------------------------------------------------
+
+with tab_new:
+    st.info(
+        "Isi data mahasiswa baru di bawah ini. Data tidak harus sudah ada "
+        "di dataset. Kolom Status tidak diinput karena merupakan target yang "
+        "akan diprediksi oleh model."
+    )
+
+    with st.expander("👤 Data Demografi & Pendaftaran", expanded=True):
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            new_marital = st.number_input("Marital status", 1, 6, 1, key="n_marital")
+            new_application_mode = st.number_input("Application mode", 1, 57, 1, key="n_appmode")
+            new_application_order = st.number_input("Application order", 0, 9, 1, key="n_apporder")
+            new_course = st.number_input("Course", 1, 9999, 1, key="n_course")
+            new_daytime = st.selectbox(
+                "Daytime/evening attendance", [1, 0],
+                format_func=lambda x: "Siang" if x == 1 else "Malam",
+                key="n_daytime",
+            )
+            new_previous_qualification = st.number_input(
+                "Previous qualification", 1, 50, 1, key="n_prevqual"
+            )
+
+        with c2:
+            new_previous_grade = st.number_input(
+                "Previous qualification grade", 0.0, 200.0, 120.0, key="n_prevgrade"
+            )
+            new_nationality = st.number_input("Nacionality", 1, 99, 1, key="n_nationality")
+            new_mother_qualification = st.number_input(
+                "Mother's qualification", 1, 50, 1, key="n_motherqual"
+            )
+            new_father_qualification = st.number_input(
+                "Father's qualification", 1, 50, 1, key="n_fatherqual"
+            )
+            new_mother_occupation = st.number_input(
+                "Mother's occupation", 0, 200, 0, key="n_motherocc"
+            )
+            new_father_occupation = st.number_input(
+                "Father's occupation", 0, 200, 0, key="n_fatherocc"
+            )
+
+        with c3:
+            new_admission_grade = st.number_input(
+                "Admission grade", 0.0, 200.0, 120.0, key="n_admission"
+            )
+            new_age = st.number_input("Age at enrollment", 15, 80, 20, key="n_age")
+            new_gender = st.selectbox(
+                "Gender", [0, 1],
+                format_func=lambda x: "Perempuan" if x == 0 else "Laki-laki",
+                key="n_gender",
+            )
+            new_displaced = st.selectbox(
+                "Displaced", [0, 1],
+                format_func=lambda x: "Tidak" if x == 0 else "Ya",
+                key="n_displaced",
+            )
+            new_special_needs = st.selectbox(
+                "Educational special needs", [0, 1],
+                format_func=lambda x: "Tidak" if x == 0 else "Ya",
+                key="n_special",
+            )
+            new_international = st.selectbox(
+                "International", [0, 1],
+                format_func=lambda x: "Tidak" if x == 0 else "Ya",
+                key="n_international",
+            )
+
+    with st.expander("💳 Kondisi Finansial", expanded=False):
+        f1, f2, f3 = st.columns(3)
+        with f1:
+            new_debtor = st.selectbox(
+                "Status Utang", [0, 1],
+                format_func=lambda x: "Tidak Berutang" if x == 0 else "Berutang",
+                key="n_debtor",
+            )
+        with f2:
+            new_tuition = st.selectbox(
+                "Status Tuition Fees", [1, 0],
+                format_func=lambda x: "Up to Date" if x == 1 else "Not Up to Date",
+                key="n_tuition",
+            )
+        with f3:
+            new_scholarship = st.selectbox(
+                "Beasiswa", [0, 1],
+                format_func=lambda x: "Bukan Penerima Beasiswa" if x == 0 else "Penerima Beasiswa",
+                key="n_scholarship",
+            )
+
+    with st.expander("📚 Performa Akademik Semester 1", expanded=True):
+        s1a, s1b = st.columns(2)
+        with s1a:
+            new_s1_credited = st.number_input("S1 Credited", 0, 50, 0, key="n_s1cred")
+            new_s1_enrolled = st.number_input("S1 Enrolled", 0, 50, 6, key="n_s1enrolled")
+            new_s1_evaluations = st.number_input("S1 Evaluations", 0, 50, 6, key="n_s1eval")
+        with s1b:
+            new_s1_approved = st.number_input("S1 Approved", 0, 50, 6, key="n_s1approved")
+            new_s1_grade = st.number_input("S1 Grade", 0.0, 20.0, 12.0, key="n_s1grade")
+            new_s1_without = st.number_input("S1 Without Evaluation", 0, 50, 0, key="n_s1without")
+
+    with st.expander("📚 Performa Akademik Semester 2", expanded=True):
+        s2a, s2b = st.columns(2)
+        with s2a:
+            new_s2_credited = st.number_input("S2 Credited", 0, 50, 0, key="n_s2cred")
+            new_s2_enrolled = st.number_input("S2 Enrolled", 0, 50, 6, key="n_s2enrolled")
+            new_s2_evaluations = st.number_input("S2 Evaluations", 0, 50, 6, key="n_s2eval")
+        with s2b:
+            new_s2_approved = st.number_input("S2 Approved", 0, 50, 6, key="n_s2approved")
+            new_s2_grade = st.number_input("S2 Grade", 0.0, 20.0, 12.0, key="n_s2grade")
+            new_s2_without = st.number_input("S2 Without Evaluation", 0, 50, 0, key="n_s2without")
+
+    with st.expander("🌍 Indikator Ekonomi", expanded=False):
+        e1, e2, e3 = st.columns(3)
+        with e1:
+            new_unemployment = st.number_input("Unemployment rate", -20.0, 50.0, 10.0, key="n_unemployment")
+        with e2:
+            new_inflation = st.number_input("Inflation rate", -20.0, 50.0, 1.0, key="n_inflation")
+        with e3:
+            new_gdp = st.number_input("GDP", -20.0, 50.0, 1.0, key="n_gdp")
+
+    predict_new_button = st.button(
+        "🚀 Prediksi Mahasiswa Baru",
+        type="primary",
+        use_container_width=True,
+        key="predict_new",
+    )
+
+    if predict_new_button:
+        new_student = pd.DataFrame([{
+            "Marital_status": new_marital,
+            "Application_mode": new_application_mode,
+            "Application_order": new_application_order,
+            "Course": new_course,
+            "Daytime_evening_attendance": new_daytime,
+            "Previous_qualification": new_previous_qualification,
+            "Previous_qualification_grade": new_previous_grade,
+            "Nacionality": new_nationality,
+            "Mothers_qualification": new_mother_qualification,
+            "Fathers_qualification": new_father_qualification,
+            "Mothers_occupation": new_mother_occupation,
+            "Fathers_occupation": new_father_occupation,
+            "Admission_grade": new_admission_grade,
+            "Displaced": new_displaced,
+            "Educational_special_needs": new_special_needs,
+            "Debtor": new_debtor,
+            "Tuition_fees_up_to_date": new_tuition,
+            "Gender": new_gender,
+            "Scholarship_holder": new_scholarship,
+            "Age_at_enrollment": new_age,
+            "International": new_international,
+            "Curricular_units_1st_sem_credited": new_s1_credited,
+            "Curricular_units_1st_sem_enrolled": new_s1_enrolled,
+            "Curricular_units_1st_sem_evaluations": new_s1_evaluations,
+            "Curricular_units_1st_sem_approved": new_s1_approved,
+            "Curricular_units_1st_sem_grade": new_s1_grade,
+            "Curricular_units_1st_sem_without_evaluations": new_s1_without,
+            "Curricular_units_2nd_sem_credited": new_s2_credited,
+            "Curricular_units_2nd_sem_enrolled": new_s2_enrolled,
+            "Curricular_units_2nd_sem_evaluations": new_s2_evaluations,
+            "Curricular_units_2nd_sem_approved": new_s2_approved,
+            "Curricular_units_2nd_sem_grade": new_s2_grade,
+            "Curricular_units_2nd_sem_without_evaluations": new_s2_without,
+            "Unemployment_rate": new_unemployment,
+            "Inflation_rate": new_inflation,
+            "GDP": new_gdp,
+        }])
+
+        if model is None:
+            st.error(
+                "Model belum tersedia. Upload `student_dropout_model.pkl` "
+                "ke repository bersama `app.py`."
+            )
+        else:
+            (
+                predicted_status,
+                dropout_probability,
+                risk_level,
+                probability_dict,
+            ) = predict_student(new_student, model)
+
+            st.markdown(
+                '<div class="section-title">🔮 Hasil Prediksi Mahasiswa Baru</div>',
+                unsafe_allow_html=True,
+            )
+            st.success(
+                "Prediksi berhasil dijalankan menggunakan model binary "
+                "Graduate vs Dropout."
+            )
+
+            r1, r2, r3 = st.columns(3)
+            r1.metric("Predicted Status", predicted_status)
+            r2.metric("Dropout Probability", f"{dropout_probability:.2%}")
+            r3.metric("Risk Level", risk_level)
+
+            probability_df = pd.DataFrame({
+                "Status": list(probability_dict.keys()),
+                "Probability": list(probability_dict.values()),
+            })
+
+            fig_new = px.bar(
+                probability_df,
+                x="Status",
+                y="Probability",
+                text="Probability",
+                title="Probabilitas Prediksi Mahasiswa Baru",
+            )
+            fig_new.update_traces(
+                texttemplate="%{text:.2%}",
+                textposition="outside",
+            )
+            fig_new.update_yaxes(tickformat=".0%", range=[0, 1])
+            fig_new.update_layout(
+                template="plotly_white",
+                margin=dict(l=10, r=10, t=55, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+            )
+            st.plotly_chart(fig_new, use_container_width=True)
+
+# ------------------------------------------------------------
+# RESULT FOR EXISTING ENROLLED STUDENT
+# ------------------------------------------------------------
+
+if predict_existing_button:
+    if model is None:
+        st.warning(
+            "Model binary belum tersedia. Letakkan `student_dropout_model.pkl` "
+            "di folder yang sama dengan `app.py`."
+        )
+        st.stop()
+
+    row = df_enrolled.iloc[[student_index - 1]]
+
+    (
+        predicted_status,
+        dropout_probability,
+        risk_level,
+        probability_dict,
+    ) = predict_student(row, model)
+
+    st.markdown(
+        '<div class="section-title">🔮 Hasil Screening Mahasiswa Enrolled</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.info(
+        "Hasil screening menggunakan data akademik yang tersedia. "
+        "Prediksi perlu diverifikasi oleh pihak institusi dan bukan keputusan akhir."
+    )
+
+    st.markdown('<div class="prediction-box">', unsafe_allow_html=True)
+
+    p1, p2, p3 = st.columns(3)
+    p1.metric("Student Index", str(student_index))
+    p2.metric("Predicted Status", predicted_status)
+    p3.metric("Dropout Probability", f"{dropout_probability:.2%}")
+
+    if risk_level == "High Risk":
+        risk_class = "risk-high"
+    elif risk_level == "Medium Risk":
+        risk_class = "risk-medium"
+    else:
+        risk_class = "risk-low"
+
+    st.markdown(
+        f'<div class="{risk_class}">Risk Level<br>'
+        f'<span style="font-size:1.35rem">{risk_level}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("#### Probabilitas Prediksi")
+
+    probability_df = pd.DataFrame({
+        "Status": list(probability_dict.keys()),
+        "Probability": list(probability_dict.values()),
+    })
+
+    fig_probability = px.bar(
+        probability_df,
+        x="Status",
+        y="Probability",
+        text="Probability",
+        title="Probabilitas Setiap Status",
+    )
+    fig_probability.update_traces(
+        texttemplate="%{text:.2%}",
+        textposition="outside",
+    )
+    fig_probability.update_yaxes(tickformat=".0%", range=[0, 1])
+    fig_probability.update_layout(
+        template="plotly_white",
+        margin=dict(l=10, r=10, t=55, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+    st.plotly_chart(fig_probability, use_container_width=True)
+
+    st.markdown("#### Data Mahasiswa yang Dipilih")
+
+    summary_columns = [
+        "Course",
+        "Gender",
+        "Age_at_enrollment",
+        "Admission_grade",
+        "Curricular_units_1st_sem_approved",
+        "Curricular_units_1st_sem_grade",
+        "Curricular_units_2nd_sem_approved",
+        "Curricular_units_2nd_sem_grade",
+        "Debtor",
+        "Tuition_fees_up_to_date",
+        "Scholarship_holder",
+    ]
+    summary_columns = [
+        column for column in summary_columns if column in row.columns
+    ]
+
+    st.dataframe(
+        map_display_labels(row[summary_columns]),
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================
 # KPI
@@ -653,164 +992,6 @@ else:
     st.info(
         "Model belum tersedia. Tambahkan `student_dropout_model.pkl` "
         "hasil training binary ke repository untuk mengaktifkan screening."
-    )
-
-
-# ============================================================
-# MODEL RESULT — APPEARS WHEN BUTTON IS CLICKED
-# ============================================================
-
-if predict_button:
-
-    if model is None:
-        st.warning(
-            "Model binary belum tersedia. Letakkan "
-            "`student_dropout_model.pkl` di folder yang sama dengan `app.py` "
-            "untuk mengaktifkan prediksi."
-        )
-        st.stop()
-
-    row = df_enrolled.iloc[[student_index - 1]]
-
-    (
-        predicted_status,
-        dropout_probability,
-        risk_level,
-        probability_dict,
-    ) = predict_student(row, model)
-
-    st.markdown(
-        '<div class="section-title">'
-        '🔮 Hasil Screening Mahasiswa'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.info(
-        "Hasil ini merupakan screening awal berdasarkan data akademik yang "
-        "tersedia. Prediksi perlu diverifikasi oleh pihak institusi dan "
-        "bukan merupakan keputusan akhir mengenai kondisi mahasiswa."
-    )
-
-    st.markdown(
-        '<div class="prediction-box">',
-        unsafe_allow_html=True,
-    )
-
-    p1, p2, p3 = st.columns(3)
-
-    p1.metric(
-        "Student Index",
-        str(student_index),
-    )
-
-    p2.metric(
-        "Predicted Status",
-        predicted_status,
-    )
-
-    p3.metric(
-        "Dropout Probability",
-        f"{dropout_probability:.2%}",
-    )
-
-    if risk_level == "High Risk":
-        risk_class = "risk-high"
-    elif risk_level == "Medium Risk":
-        risk_class = "risk-medium"
-    else:
-        risk_class = "risk-low"
-
-    st.markdown(
-        f"""
-        <div class="{risk_class}">
-            Risk Level<br>
-            <span style="font-size:1.35rem">
-                {risk_level}
-            </span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        "#### Probabilitas Prediksi"
-    )
-
-    probability_df = pd.DataFrame(
-        {
-            "Status": list(probability_dict.keys()),
-            "Probability": list(
-                probability_dict.values()
-            ),
-        }
-    )
-
-    fig_probability = px.bar(
-        probability_df,
-        x="Status",
-        y="Probability",
-        text="Probability",
-        title="Probabilitas Setiap Status",
-    )
-
-    fig_probability.update_traces(
-        texttemplate="%{text:.2%}",
-        textposition="outside",
-    )
-
-    fig_probability.update_yaxes(
-        tickformat=".0%",
-        range=[0, 1],
-    )
-
-    fig_probability.update_layout(
-        template="plotly_white",
-        margin=dict(l=10, r=10, t=55, b=10),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-    )
-
-    st.plotly_chart(
-        fig_probability,
-        use_container_width=True,
-    )
-
-    st.markdown(
-        "#### Data Mahasiswa yang Dipilih"
-    )
-
-    summary_columns = [
-        "Course",
-        "Gender",
-        "Age_at_enrollment",
-        "Admission_grade",
-        "Curricular_units_1st_sem_approved",
-        "Curricular_units_1st_sem_grade",
-        "Curricular_units_2nd_sem_approved",
-        "Curricular_units_2nd_sem_grade",
-        "Debtor",
-        "Tuition_fees_up_to_date",
-        "Scholarship_holder",
-    ]
-
-    summary_columns = [
-        column
-        for column in summary_columns
-        if column in row.columns
-    ]
-
-    display_row = map_display_labels(row[summary_columns])
-
-    st.dataframe(
-        display_row,
-        use_container_width=True,
-        hide_index=True,
-    )
-
-    st.markdown(
-        '</div>',
-        unsafe_allow_html=True,
     )
 
 
@@ -1228,13 +1409,6 @@ with f2:
         fig_approval,
         use_container_width=True,
     )
-
-st.info(
-    "Catatan: visualisasi dashboard bersifat deskriptif untuk membantu "
-    "monitoring. Perbedaan antar kelompok tidak secara langsung menunjukkan "
-    "hubungan sebab-akibat."
-)
-
 
 # ============================================================
 # FOOTER

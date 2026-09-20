@@ -53,7 +53,7 @@ Cakupan proyek meliputi:
 8.  Membagi data training dan testing menggunakan *stratified train-test
     split*.
 9.  Membandingkan Random Forest dan XGBoost menggunakan
-    RandomizedSearchCV dan StratifiedKFold.
+    RandomizedSearchCV dengan StratifiedKFold.
 10. Mengevaluasi model menggunakan accuracy, precision, recall,
     F1-score, confusion matrix, serta metrik khusus kelas Dropout.
 11. Menyimpan model dalam format `.pkl`.
@@ -68,9 +68,16 @@ Cakupan proyek meliputi:
 
 ### Persiapan
 
-Sumber data: Dataset yang digunakan adalah dataset *Students'
-Performance* yang disediakan untuk proyek akhir Dicoding. Dataset
-terdiri dari 4.424 baris dan 37 kolom.
+Dataset yang digunakan dalam proyek ini adalah **Students' Performance**.
+Dataset disediakan untuk proyek akhir Dicoding dan terdiri dari 4.424 baris
+dan 37 kolom.
+
+**Sumber data:**
+
+- Repository dataset Dicoding:
+  https://github.com/dicodingacademy/dicoding_dataset/tree/main/students_performance
+- File dataset `data.csv`:
+
 
 Setup environment:
 
@@ -94,6 +101,14 @@ pip install -r requirements.txt
 
 Dashboard dibuat untuk membantu Jaya Jaya Institut memahami kondisi
 mahasiswa dan memonitor indikator yang berkaitan dengan *dropout*.
+
+Berdasarkan dataset yang dianalisis, terdapat **4.424 mahasiswa** dengan tiga status akhir, yaitu **Graduate, Dropout, dan Enrolled**. Dashboard digunakan untuk menyajikan distribusi status tersebut secara kuantitatif serta membantu melihat pola dropout berdasarkan indikator akademik, administratif, dan ekonomi.
+
+Untuk meningkatkan keterbacaan bagi pengguna non-teknis, nilai biner pada
+dashboard ditampilkan menggunakan label deskriptif. Contohnya, Gender
+ditampilkan sebagai **Perempuan/Laki-laki**, status finansial sebagai
+**Tidak Berutang/Berutang**, dan status pembayaran sebagai **Up to Date/Not
+Up to Date**.
 
 Dashboard menampilkan beberapa komponen utama:
 
@@ -122,7 +137,12 @@ Dashboard menampilkan beberapa komponen utama:
     membandingkan rasio mata kuliah yang disetujui terhadap mata kuliah
     yang diambil pada semester 1 dan semester 2.
 
-Dashboard juga menyediakan penerapan model melalui sidebar. Pengguna
+11. **Filter Gender** --- filter interaktif untuk melihat dashboard
+    berdasarkan kategori **Perempuan** dan **Laki-laki**.
+12. **Filter Status Financial** --- filter interaktif untuk melihat
+    dashboard berdasarkan kategori **Tidak Berutang** dan **Berutang**.
+
+Dashboard juga menyediakan penerapan model pada halaman utama. Pengguna
 dapat memasukkan Student Index, kemudian menekan tombol **Terapkan
 Model** untuk memperoleh hasil prediksi, probabilitas dropout, risk
 level, dan probabilitas setiap status.
@@ -130,11 +150,55 @@ level, dan probabilitas setiap status.
 *Link Dashboard Looker Studio:*
 https://datastudio.google.com/reporting/55c07af9-5410-4d96-b557-1f77ed44ba96
 
-*Link Prototype Streamlit:*
+*Link Prototype Streamlit Cloud:*
 https://institutjayajayadashboard-4olgxehshv9ftm3qexxg9p.streamlit.app/
 
 *Link Video Penjelasan:*
 https://youtu.be/D4zR2kGy-AI?si=AeB2Ub0CBp9zCJtf
+
+### Deployment ke Streamlit Community Cloud
+
+Prototype machine learning dideploy menggunakan Streamlit Community Cloud
+dan terhubung dengan repository GitHub. Agar fitur screening dapat berjalan,
+repository harus memuat `app.py`, dataset, dependency, serta model binary
+hasil training.
+
+Alur deployment:
+
+1. Upload/push seluruh project ke repository GitHub.
+2. Login ke Streamlit Community Cloud.
+3. Hubungkan repository GitHub dengan Streamlit Community Cloud.
+4. Pilih branch dan file utama `app.py`.
+5. Pastikan `requirements.txt`, folder `Data/`, `student_dropout_model.pkl`,
+   dan `model_metadata.pkl` tersedia pada repository.
+6. Deploy aplikasi.
+7. Uji URL Streamlit dengan memilih Student Index dan menekan **Terapkan Model**.
+8. Pastikan hasil prediksi muncul sebelum menggunakan URL tersebut sebagai
+   prototype final submission.
+
+Contoh perintah untuk memperbarui repository:
+
+```bash
+git add .
+git commit -m "Update final project"
+git push origin main
+```
+
+**Catatan:** `student_dropout_model.pkl` harus merupakan model binary dengan
+kelas `0 = Graduate` dan `1 = Dropout`. File `model_metadata.pkl` digunakan
+untuk menyimpan informasi model dan metrik evaluasi, bukan sebagai objek
+model yang dipanggil untuk prediksi.
+
+
+### Pembagian Fungsi Dashboard dan Prototype
+
+- **Looker Studio** digunakan sebagai dashboard analisis dan monitoring.
+  Pengguna dapat mengeksplorasi distribusi status, dropout rate,
+  performa akademik, kondisi pembayaran, status finansial, serta
+  menggunakan filter Gender dan Status Financial.
+- **Streamlit** digunakan sebagai prototype Machine Learning untuk
+  screening mahasiswa Enrolled menggunakan model binary Graduate vs
+  Dropout.
 
 ## Menjalankan Sistem Machine Learning
 
@@ -151,22 +215,57 @@ Data dengan status **Enrolled** tidak digunakan dalam proses training.
 Data tersebut disimpan terpisah untuk digunakan sebagai data
 screening/prediksi pada prototype.
 
+Setelah feature engineering, data pemodelan memiliki **48 fitur**, yang
+terdiri dari fitur asli yang digunakan dalam model dan **12 fitur
+tambahan** hasil feature engineering.
+
 Model yang dibandingkan adalah Random Forest dan XGBoost dengan
 hyperparameter tuning menggunakan RandomizedSearchCV dan validasi
 StratifiedKFold. Model final yang digunakan adalah **XGBoost**.
 
 ### Evaluasi Model
 
-Berdasarkan hasil evaluasi model final pada data testing:
+Pada tahap pemodelan, sebanyak **3.630 mahasiswa** digunakan sebagai data training dan testing setelah status `Enrolled` dipisahkan. Distribusi target pada data pemodelan adalah:
 
--   **Accuracy:** 92,98%
--   **Precision kelas Dropout:** 90,59%
--   **Recall kelas Dropout:** 91,55%
--   **F1-score kelas Dropout:** 91,07%
--   **Macro F1-score:** 92,64%
+- **Graduate:** 2.209 mahasiswa (60,85%)
+- **Dropout:** 1.421 mahasiswa (39,15%)
 
-Metrik tersebut menggambarkan performa model pada data pengujian dan
-bukan jaminan bahwa setiap prediksi individu akan selalu benar.
+Data kemudian dibagi secara *stratified* menjadi **2.904 data training** dan **726 data testing**. Distribusi target pada data training dan testing tetap serupa.
+
+Dua model dibandingkan menggunakan *RandomizedSearchCV* dan 5-fold `StratifiedKFold`:
+
+| Model | Best CV Accuracy |
+|---|---:|
+| Random Forest | **90,46%** |
+| XGBoost | **90,84%** |
+
+Berdasarkan hasil cross-validation, **XGBoost dipilih sebagai model final**.
+
+Hasil cross-validation tambahan untuk model XGBoost:
+
+| Metrik | Hasil |
+|---|---:|
+| Accuracy | **90,84%** |
+| Precision | **92,51%** |
+| Recall | **83,38%** |
+| F1-Score | **87,70%** |
+
+Setelah pemilihan model, XGBoost dievaluasi satu kali pada data testing:
+
+| Metrik | Hasil |
+|---|---:|
+| Accuracy | **92,98%** |
+| Macro Precision | **92,56%** |
+| Macro Recall | **92,72%** |
+| Macro F1 | **92,64%** |
+| Weighted F1 | **92,98%** |
+| Precision kelas Dropout | **90,59%** |
+| Recall kelas Dropout | **91,55%** |
+| F1-score kelas Dropout | **91,07%** |
+
+Recall kelas `Dropout` sebesar **91,55%** menunjukkan proporsi data Dropout pada data testing yang berhasil dikenali oleh model. Precision kelas `Dropout` sebesar **90,59%** menunjukkan proporsi prediksi Dropout yang benar-benar termasuk kelas Dropout pada data testing.
+
+Metrik tersebut menggambarkan performa model pada data pengujian dan bukan jaminan bahwa setiap prediksi individu akan selalu benar.
 
 ### Menjalankan Prototype Secara Lokal
 
@@ -195,7 +294,7 @@ http://localhost:8501
 ### Cara Menggunakan Prototype
 
 1.  Jalankan aplikasi Streamlit.
-2.  Buka sidebar **Cari Student**.
+2.  Buka bagian **Cari Student untuk Screening** pada halaman utama.
 3.  Masukkan **Student Index**.
 4.  Klik **Terapkan Model**.
 5.  Sistem mengambil data mahasiswa berdasarkan posisi baris pada data
@@ -206,57 +305,78 @@ http://localhost:8501
     Probability, Risk Level, probabilitas setiap status, dan ringkasan
     data mahasiswa yang dipilih.
 
+### File yang Dibutuhkan untuk Prototype
+
+Struktur minimum repository untuk menjalankan prototype:
+
+```text
+project/
+├── app.py
+├── requirements.txt
+├── student_dropout_model.pkl
+├── model_metadata.pkl
+└── Data/
+    └── data.csv
+```
+
+`student_dropout_model.pkl` adalah objek model XGBoost binary yang digunakan
+untuk `predict()` dan `predict_proba()`. Aplikasi memvalidasi bahwa model
+memiliki dua kelas, yaitu `0` dan `1`, sebelum fitur screening diaktifkan.
+
 ## Conclusion
 
 ### 1. Kesimpulan Berdasarkan Hasil Analisis Data
 
-Hasil EDA dan dashboard menunjukkan bahwa kondisi mahasiswa dapat
-dianalisis melalui beberapa kelompok informasi, terutama performa
-akademik, jumlah mata kuliah yang disetujui, perubahan performa
-antarsemester, serta beberapa faktor administratif dan ekonomi.
+Hasil EDA menunjukkan adanya perbedaan karakteristik akademik antarstatus mahasiswa. Berdasarkan ringkasan statistik per status, mahasiswa **Dropout** memiliki rata-rata `Curricular_units_1st_sem_approved` sebesar **2,55**, sedangkan `Graduate` sebesar **6,23**. Pada semester kedua, rata-rata `Curricular_units_2nd_sem_approved` pada Dropout sebesar **1,94**, sedangkan Graduate sebesar **6,18**.
 
-Karakteristik yang perlu menjadi perhatian dalam monitoring adalah
-mahasiswa yang menunjukkan performa akademik lebih rendah, tingkat
-persetujuan mata kuliah yang lebih rendah, atau perubahan performa
-akademik yang kurang baik antarsemester. Informasi seperti status
-pembayaran tuition fees, status debtor, dan scholarship holder juga
-dapat digunakan sebagai konteks tambahan dalam proses pendampingan.
+Perbedaan juga terlihat pada rata-rata nilai akademik. Rata-rata `Curricular_units_1st_sem_grade` pada Dropout sebesar **7,26**, sedangkan Graduate sebesar **12,64**. Pada semester kedua, rata-rata `Curricular_units_2nd_sem_grade` pada Dropout sebesar **5,90**, sedangkan Graduate sebesar **12,70**.
 
-Perbedaan dropout rate antar kategori pada dashboard merupakan temuan
-deskriptif dari data. Temuan tersebut digunakan untuk membantu institusi
-menentukan area yang perlu dipantau lebih lanjut dan tidak secara
-langsung menunjukkan hubungan sebab-akibat.
+Hasil tersebut menunjukkan bahwa karakteristik yang perlu menjadi perhatian dalam monitoring dropout terutama berkaitan dengan **performa akademik, jumlah mata kuliah yang disetujui, dan progres akademik antarsemester**. EDA juga menganalisis faktor kategorikal seperti status pembayaran, status debtor, beasiswa, pendaftaran, course, dan karakteristik mahasiswa untuk melihat perbedaan dropout rate antar kelompok.
+
+Selain faktor akademik, informasi administratif dan ekonomi seperti **status pembayaran tuition fees, status debtor, dan scholarship holder** dapat digunakan sebagai konteks tambahan dalam proses monitoring dan pendampingan.
+
+Temuan EDA dan dashboard bersifat **deskriptif**. Oleh karena itu, perbedaan antar kelompok tidak dapat langsung diartikan sebagai hubungan sebab-akibat. Hasil analisis lebih tepat digunakan untuk mengidentifikasi kelompok atau indikator yang perlu dipantau lebih lanjut.
+
+Secara keseluruhan, dashboard memberikan gambaran kuantitatif mengenai
+distribusi status mahasiswa dan indikator yang berkaitan dengan dropout,
+sedangkan prototype Streamlit melanjutkan hasil analisis tersebut ke tahap
+screening berbasis model binary.
 
 ### 2. Kesimpulan Berdasarkan Hasil Machine Learning
 
-Model final yang digunakan adalah XGBoost dengan target binary
-classification, yaitu Graduate dan Dropout. Pada data testing, model
-memperoleh:
+Model final yang digunakan adalah **XGBoost** dengan target binary classification:
 
--   Accuracy sebesar **92,98%**.
--   Precision kelas Dropout sebesar **90,59%**.
--   Recall kelas Dropout sebesar **91,55%**.
--   F1-score kelas Dropout sebesar **91,07%**.
--   Macro F1-score sebesar **92,64%**.
+- `0` = **Graduate**
+- `1` = **Dropout**
 
-Recall kelas Dropout sebesar 91,55% menunjukkan bahwa sebagian besar
-mahasiswa yang termasuk kelas Dropout pada data pengujian berhasil
-dikenali oleh model. Precision sebesar 90,59% menunjukkan bahwa sebagian
-besar prediksi Dropout yang dihasilkan model sesuai dengan kelas Dropout
-pada data pengujian.
+Data `Enrolled` tidak digunakan sebagai kelas training. Sebanyak **3.630** data Graduate dan Dropout digunakan untuk pemodelan, sedangkan **794** data Enrolled disimpan terpisah untuk kebutuhan screening/prediksi pada prototype.
 
-Model menggunakan fitur akademik, administratif, ekonomi, dan fitur
-hasil *feature engineering* yang tersedia pada dataset. Feature
-engineering mencakup antara lain approval rate semester 1 dan 2,
-evaluation rate, perubahan nilai, perubahan jumlah mata kuliah yang
-disetujui, total mata kuliah yang disetujui, total mata kuliah yang
-diambil, total evaluasi, rata-rata nilai semester, dan grade ratio.
+XGBoost dipilih setelah dibandingkan dengan Random Forest menggunakan 5-fold `StratifiedKFold`. XGBoost memperoleh **CV Accuracy 90,84%**, sedikit lebih tinggi dibandingkan Random Forest sebesar **90,46%**.
 
-Prototipe Streamlit digunakan untuk menerapkan model pada data mahasiswa
-Enrolled sebagai alat bantu screening. Hasil prediksi, probabilitas
-dropout, dan risk level dapat digunakan sebagai informasi awal bagi
-pihak institusi dan tetap perlu diverifikasi berdasarkan kondisi
-mahasiswa yang sebenarnya.
+Pada data testing, XGBoost memperoleh **Accuracy 92,98%**, **Precision kelas Dropout 90,59%**, **Recall kelas Dropout 91,55%**, dan **F1-score kelas Dropout 91,07%**. Nilai **Macro F1 sebesar 92,64%** menunjukkan performa rata-rata model yang baik pada kedua kelas.
+
+### Interpretasi Feature Importance
+
+Notebook juga menampilkan *feature importance* dari model XGBoost. Fitur dengan nilai importance tertinggi adalah:
+
+| Peringkat | Fitur | Importance |
+|---:|---|---:|
+| 1 | `Approval_Rate_2nd_Sem` | **0,176687** |
+| 2 | `Curricular_units_2nd_sem_approved` | **0,042873** |
+| 3 | `Tuition_fees_up_to_date_1` | **0,035203** |
+| 4 | `Approval_Rate_1st_Sem` | **0,034774** |
+| 5 | `Tuition_fees_up_to_date_0` | **0,029168** |
+| 6 | `Curricular_units_2nd_sem_enrolled` | **0,021461** |
+| 7 | `Curricular_units_1st_sem_enrolled` | **0,017717** |
+| 8 | `Course_171` | **0,016944** |
+| 9 | `Course_9556` | **0,015224** |
+| 10 | `Total_Approved` | **0,015141** |
+
+Berdasarkan *feature importance*, `Approval_Rate_2nd_Sem` merupakan fitur dengan nilai importance tertinggi pada model final. Beberapa fitur akademik semester kedua, jumlah mata kuliah yang disetujui, approval rate semester pertama, dan status pembayaran juga termasuk dalam fitur dengan importance tinggi.
+
+Nilai *feature importance* merupakan **interpretasi model**, bukan bukti bahwa fitur tersebut secara langsung menyebabkan mahasiswa mengalami dropout. Hubungan sebab-akibat tidak dapat disimpulkan hanya dari nilai importance.
+
+Prototype Streamlit menggunakan model yang telah disimpan dalam `student_dropout_model.pkl` untuk melakukan screening terhadap mahasiswa `Enrolled`. Sistem menampilkan hasil prediksi, probabilitas `Dropout`, dan `Risk Level` sebagai informasi awal yang tetap perlu diverifikasi oleh pihak institusi.
 
 ### Rekomendasi Action Items
 
